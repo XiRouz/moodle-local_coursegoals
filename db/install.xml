@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <XMLDB PATH="local/coursegoals/db" VERSION="20231013" COMMENT="XMLDB file for Moodle local_coursegoals"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
   <TABLES>
 
@@ -29,7 +29,7 @@
       <FIELDS>
         <FIELD NAME="id" SEQUENCE="true" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="coursegoalid" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true"/>
-        <FIELD NAME="compruleid" SEQUENCE="false" TYPE="char" NOTNULL="true"/>
+        <FIELD NAME="compruleid" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="name" SEQUENCE="false" TYPE="char" LENGTH="255" NOTNULL="true"/>
         <FIELD NAME="description" SEQUENCE="false" TYPE="text" NOTNULL="false"/>
         <FIELD NAME="comprule_params" SEQUENCE="false" TYPE="text" NOTNULL="false" COMMENT="Parameters of completion rule in JSON format"/>

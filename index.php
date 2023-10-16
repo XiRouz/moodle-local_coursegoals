@@ -18,7 +18,8 @@ $PAGE->set_context($context);
 $PAGE->set_title(get_string('displayname', 'local_coursegoals'));
 $PAGE->set_heading(get_string('displayname', 'local_coursegoals'));
 $PAGE->set_url(new moodle_url($FULLME));
-$PAGE->set_pagelayout('admin');
+$PAGE->set_pagelayout('course');
+//$PAGE->set_pagetype('course-view-' . $course->format); //TODO
 
 $params = ['context' => $context, 'courseid' => $course ?? null];
 $table = \local_coursegoals\table\coursegoals_table::create($PAGE, $params);
