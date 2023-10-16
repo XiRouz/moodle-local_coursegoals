@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/coursegoals/db" VERSION="20231010" COMMENT="XMLDB file for Moodle local_coursegoals"
+<XMLDB PATH="local/coursegoals/db" VERSION="20231013" COMMENT="XMLDB file for Moodle local_coursegoals"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -10,14 +10,14 @@
         <FIELD NAME="id" SEQUENCE="true" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="courseid" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="status" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="false"/>
-        <FIELD NAME="name" SEQUENCE="false" TYPE="char" NOTNULL="true"/>
+        <FIELD NAME="name" SEQUENCE="false" TYPE="char" LENGTH="255" NOTNULL="true"/>
         <FIELD NAME="description" SEQUENCE="false" TYPE="text" NOTNULL="false"/>
         <FIELD NAME="availability" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Availability restrictions for viewing this activity, in JSON format. Null if no restrictions."/>
         <FIELD NAME="onfinish" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Actions on goal finish by user in JSON format"/>
         <FIELD NAME="timecreated" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="timemodified" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="false"/>
-        <FIELD NAME="createdby" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true"/>
-        <FIELD NAME="modifiedby" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="false"/>
+        <FIELD NAME="usercreated" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="usermodified" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="false"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
@@ -25,18 +25,18 @@
       </KEYS>
     </TABLE>
 
-    <TABLE NAME="coursegoals_task" COMMENT="List of goals on courses">
+    <TABLE NAME="coursegoals_task" COMMENT="Tasks of goals to complete them">
       <FIELDS>
         <FIELD NAME="id" SEQUENCE="true" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="coursegoalid" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="compruleid" SEQUENCE="false" TYPE="char" NOTNULL="true"/>
-        <FIELD NAME="name" SEQUENCE="false" TYPE="char" NOTNULL="true"/>
+        <FIELD NAME="name" SEQUENCE="false" TYPE="char" LENGTH="255" NOTNULL="true"/>
         <FIELD NAME="description" SEQUENCE="false" TYPE="text" NOTNULL="false"/>
         <FIELD NAME="comprule_params" SEQUENCE="false" TYPE="text" NOTNULL="false" COMMENT="Parameters of completion rule in JSON format"/>
         <FIELD NAME="timecreated" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="timemodified" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="false"/>
-        <FIELD NAME="createdby" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true"/>
-        <FIELD NAME="modifiedby" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="false"/>
+        <FIELD NAME="usercreated" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="usermodified" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="false"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
@@ -45,10 +45,24 @@
       </KEYS>
     </TABLE>
 
+    <TABLE NAME="coursegoals_taskrecords" COMMENT="Records of task completions by users">
+      <FIELDS>
+        <FIELD NAME="id" SEQUENCE="true" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="taskid" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="userid" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="completed" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="timemodified" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="taskid" TYPE="foreign" FIELDS="taskid" REFTABLE="coursegoals_task" REFFIELDS="id"/>
+      </KEYS>
+    </TABLE>
+
     <TABLE NAME="coursegoals_comprules" COMMENT="Subplugins to use for calculating completion of tasks">
       <FIELDS>
         <FIELD NAME="id" SEQUENCE="true" TYPE="int" LENGTH="10" NOTNULL="true"/>
-        <FIELD NAME="name" SEQUENCE="false" TYPE="char" NOTNULL="true" COMMENT="Name of subplugin directory"/>
+        <FIELD NAME="name" SEQUENCE="false" TYPE="char" LENGTH="255" NOTNULL="true" COMMENT="Name of subplugin directory"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>

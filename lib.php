@@ -14,7 +14,7 @@ function local_coursegoals_before_footer() {
 
     $html = '';
     try {
-// check if on allowed page
+        // check if on allowed page
         if (! helper::isOnAllowedPage())
             return '';
 
