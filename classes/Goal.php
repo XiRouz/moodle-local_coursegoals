@@ -3,6 +3,7 @@
 namespace local_coursegoals;
 
 use Exception;
+use stdClass;
 
 class Goal extends database_object
 {
@@ -11,8 +12,10 @@ class Goal extends database_object
     const ACTION_CREATE = 'create_goal';
     const ACTION_EDIT = 'edit_goal';
     const ACTION_DELETE = 'delete_goal';
+    const ACTION_ACTIVATE = 'activate_goal';
+    const ACTION_STOP = 'stop_goal';
 
-    const STATUS_INITIAL = 0;
+    const STATUS_INACTIVE = 0;
     const STATUS_ACTIVE = 1;
     const STATUS_STOPPED = -1;
 
@@ -37,6 +40,77 @@ class Goal extends database_object
 
     }
 
+    public function activate() {
+        if ($this->status == self::STATUS_ACTIVE) {
+            return false;
+        }
+        $data = new stdClass();
+        $data->status = self::STATUS_ACTIVE;
+        return $this->update($data);
+    }
+
+    public function calculateForUser($userid) {
+        $tasks = $this->getTasks(true);
+        foreach ($tasks as $task) {
+            $task->calculateCompletionForUser($userid);
+        }
+    }
+
+    /**
+     * @param bool $asClassObjects if true, function returns Task objects, else DB instances returned
+     * @return Task[]|array tasks of goal as array of instances from DB or Task objects
+     * @throws \dml_exception
+     */
+    public function getTasks($asClassObjects = false) {
+        global $DB;
+        $instances = $DB->get_records_select(Task::TABLE, 'coursegoalid = :coursegoalid', ['coursegoalid' => $this->id]);
+        if ($asClassObjects) {
+            $objects = [];
+            foreach ($instances as $instance) {
+                $objects[$instance->id] = new \local_coursegoals\Task($instance->id);
+            }
+            return $objects;
+        } else {
+            return $instances;
+        }
+    }
+
+    public static function getGoalsInCourse($courseid, $goalStatus = Goal::STATUS_ACTIVE, $returnBool = false) {
+        global $DB;
+
+        $whereconditions = [];
+        $params['courseid'] = $courseid;
+        $whereconditions[] = "courseid = :courseid";
+        if (is_array($goalStatus)) {
+            list($statusval, $statusparams) = $DB->get_in_or_equal($goalStatus, SQL_PARAMS_NAMED);
+            $whereconditions[] = "status $statusval";
+            $params = array_merge($params, $statusparams);
+        } else if (is_numeric($goalStatus)) {
+            $whereconditions[] = "status = :status";
+            $params['status'] = $goalStatus;
+        }
+        $whereclause = !empty($whereconditions) ? "WHERE (" . implode(" AND ", $whereconditions) . ")" : "";
+        $sql = "
+            SELECT cg.id
+            FROM {coursegoals} cg
+            $whereclause
+            ORDER BY cg.id DESC
+        ";
+        $results = $DB->get_records_sql($sql, $params);
+        if (empty($results)) {
+            return false;
+        } else {
+            if ($returnBool) {
+                return true;
+            }
+            $objects = [];
+            foreach ($results as $result) {
+                $objects[$result->id] = new self($result->id);
+            }
+            return $objects;
+        }
+    }
+
     public static function userCanManageGoals($context) {
         if ($context->contextlevel == CONTEXT_SYSTEM) {
             return has_capability('local/coursegoals:manage_all_goals', $context);
@@ -46,21 +120,16 @@ class Goal extends database_object
         return false;
     }
 
-    public static function getTasksByGoalID($goalid) {
-        global $DB;
-        return $DB->get_records_select('coursegoals_task', 'coursegoalid = :coursegoalid', ['coursegoalid' => $goalid]); // TODO: to Task::TABLE
-    }
-
     /**
      * @throws \coding_exception
      */
     public static function create(\stdClass $fields)
     {
-        $fields->status = self::STATUS_INITIAL;
+        $fields->status = self::STATUS_INACTIVE;
 
         global $USER;
         if (!isset($fields->usercreated)) {
-            $fields->usercreated = $USER;
+            $fields->usercreated = $USER->id;
         }
         if (!isset($fields->timecreated)) {
             $fields->timecreated = time();
@@ -86,7 +155,7 @@ class Goal extends database_object
         }
         global $USER;
         if (!isset($fields->usermodified)) {
-            $fields->usermodified = $USER;
+            $fields->usermodified = $USER->id;
         }
         if (!isset($fields->timemodified)) {
             $fields->timemodified = time();

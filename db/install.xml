@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <XMLDB PATH="local/coursegoals/db" VERSION="20231013" COMMENT="XMLDB file for Moodle local_coursegoals"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
   <TABLES>
 
@@ -41,11 +41,11 @@
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
         <KEY NAME="coursegoalid" TYPE="foreign" FIELDS="coursegoalid" REFTABLE="coursegoals" REFFIELDS="id"/>
-        <KEY NAME="compruleid" TYPE="foreign" FIELDS="compruleid" REFTABLE="coursegoals_comprules" REFFIELDS="id"/>
+        <KEY NAME="compruleid" TYPE="foreign" FIELDS="compruleid" REFTABLE="coursegoals_comprule" REFFIELDS="id"/>
       </KEYS>
     </TABLE>
 
-    <TABLE NAME="coursegoals_taskrecords" COMMENT="Records of task completions by users">
+    <TABLE NAME="coursegoals_taskrecord" COMMENT="Records of task completions by users">
       <FIELDS>
         <FIELD NAME="id" SEQUENCE="true" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="taskid" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true"/>
@@ -59,7 +59,7 @@
       </KEYS>
     </TABLE>
 
-    <TABLE NAME="coursegoals_comprules" COMMENT="Subplugins to use for calculating completion of tasks">
+    <TABLE NAME="coursegoals_comprule" COMMENT="Subplugins to use for calculating completion of tasks">
       <FIELDS>
         <FIELD NAME="id" SEQUENCE="true" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="name" SEQUENCE="false" TYPE="char" LENGTH="255" NOTNULL="true" COMMENT="Name of subplugin directory"/>

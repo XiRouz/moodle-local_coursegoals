@@ -4,6 +4,7 @@ namespace local_coursegoals\output;
 
 use plugin_renderer_base;
 use stdClass;
+use \local_coursegoals\Goal;
 /**
  * @package    local_coursegoals
  * @copyright  2023 Lavrentev Semyon
@@ -17,28 +18,46 @@ class renderer extends plugin_renderer_base {
         if (empty($data)) {
             return '';
         }
-//        $data->parentelement = '#page-header';
         return $this->render_from_template('local_coursegoals/goals_tab', $data);
     }
 
     private function prepareGoalsTabData() {
+        global $COURSE;
         $data = new stdClass();
 
-        $goal1 = new stdClass();
-        $goal1->goalname = "GOALNAME1";
-        $task1 = (object)['taskname' => "TASKNAME1"];
-        $goal1->tasks[] = $task1;
-        $task2 = (object)['taskname' => "TASKNAME2"];
-        $goal1->tasks[] = $task2;
+        $goals = Goal::getGoalsInCourse($COURSE->id);
 
-        $data->goals[] = $goal1;
+        if (empty($goals)) {
+            $goal1 = new stdClass();
+            $goal1->goalname = "DUMMY GOALNAME1";
+            $task1 = (object)['taskname' => "TASKNAME1"];
+            $goal1->tasks[] = $task1;
+            $task2 = (object)['taskname' => "TASKNAME2"];
+            $goal1->tasks[] = $task2;
 
-        $goal2 = new stdClass();
-        $goal2->goalname = "GOALNAME2";
-        $othertask = (object)['taskname' => "other"];
-        $goal2->tasks[] = $othertask;
+            $data->goals[] = $goal1;
 
-        $data->goals[] = $goal2;
+            $goal2 = new stdClass();
+            $goal2->goalname = "GOALNAME2";
+            $othertask = (object)['taskname' => "other"];
+            $goal2->tasks[] = $othertask;
+
+            $data->goals[] = $goal2;
+        }
+        
+        foreach ($goals as $goal) {
+            $goalrow = (object)[
+                'goalname' => $goal->get_name(),
+            ];
+            $tasks = $goal->getTasks(true);
+            foreach ($tasks as $task) {
+                $taskrow = (object)[
+                    'taskname' => $task->get_name(),
+                ];
+                $goalrow->tasks[] = $taskrow;
+            }
+            $data->goals[] = $goalrow;
+        }
 
         return $data;
     }

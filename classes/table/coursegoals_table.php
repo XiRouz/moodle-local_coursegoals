@@ -11,6 +11,7 @@ use table_sql;
 use moodle_url;
 use html_writer;
 use local_coursegoals\Goal;
+use local_coursegoals\Task;
 
 class coursegoals_table extends table_sql
 {
@@ -53,6 +54,7 @@ class coursegoals_table extends table_sql
             'name' => get_string('name'),
             'coursename' => get_string('course'),
             'status' => get_string('status'),
+            'tasks' => get_string('tasks', 'local_coursegoals'),
             'actions' => get_string('actions'),
         ];
 
@@ -71,78 +73,83 @@ class coursegoals_table extends table_sql
         return format_string($data->coursename);
     }
 
-    public function col_tasks($data) {
-        $tpc = new Chapter($data->id, true);
-        $html = '';
-        foreach ($tpc->themes as $theme) {
-            $implodearr = [];
-            $implodearr[] = '<b>'.$theme->get_name().'</b> | <small>'.$theme->getShortName().'</small>';
-            $implodearr[] = $this->getThemeActions($theme);
-            $label = implode('&ensp;', $implodearr);
-
-            $info = [];
-            switch ($theme->default_grade_mode) {
-                case Theme::GRADE_MODE_MANUAL:
-                    $gradeModeString = get_string('grade_mode_manual', 'local_sic');
-                    break;
-                case Theme::GRADE_MODE_FROMMOD:
-                    $gradeModeString = get_string('grade_mode_frommod', 'local_sic');
-                    break;
-                case Theme::GRADE_MODE_TEACHER_CHOICE:
-                    $gradeModeString = get_string('grade_mode_teacher_choice', 'local_sic');
-                    break;
-            }
-            $info[] = $gradeModeString;
-            $cm = $theme->getAssignedCM();
-            if ($cm) {
-                $info[] = \html_writer::link($cm->get_url(), format_string($cm->name));
-            }
-            $info[] = get_string('grading', 'local_sic').': 
-                ['.round($theme->min_grade, 2).';'.round($theme->max_grade, 2).']';
-
-            $html .= html_writer::start_tag('details', ['class' => 'themeinfo', 'open' => 'true']);
-            $html .= html_writer::tag('summary', "{$label}");
-            $html .= html_writer::alist($info);
-            $html .= html_writer::end_tag('details');
-            $this->setupThemeActionsModals($theme->id);
+    public function col_status($data) {
+        switch ($data->status) {
+            case Goal::STATUS_INACTIVE:
+                return get_string('status_inactive', 'local_coursegoals');
+                break;
+            case Goal::STATUS_ACTIVE:
+                return get_string('status_active', 'local_coursegoals');
+                break;
+            case Goal::STATUS_STOPPED:
+                return get_string('status_stopped', 'local_coursegoals');
+                break;
         }
-
-        $html .= $this->addNewThemeLink($data->id);
-        $this->setupAddNewThemeModal($data->id);
-        return $html;
     }
 
     public function col_actions($data) {
         global $OUTPUT;
         $icons = [];
 
-        if (has_capability('local/sic:manage_themeplans', $this->context)
-                && $data->tpc->can_be_updated()) {
+
+        if ($data->goal->status != Goal::STATUS_ACTIVE) { // TODO: think of activation and deactivation of goals once again
+            $icons[] = $OUTPUT->action_icon('#',
+                new \pix_icon('t/play', get_string(Goal::ACTION_ACTIVATE, 'local_coursegoals'),'core'),
+                null, [
+                    'data-action' => Goal::ACTION_ACTIVATE,
+                    'data-id' => $data->id,
+                    'data-title' => get_string(Goal::ACTION_ACTIVATE, 'local_coursegoals')
+                ]);
+        }
+
+        if (Goal::userCanManageGoals($this->context) && $data->goal->can_be_updated()) {
             $icons[] = $OUTPUT->action_icon('#',
                 new \pix_icon('t/edit', get_string('edit'),'core'),
                 null, [
-                    'data-action' => Chapter::ACTION_EDIT,
+                    'data-action' => Goal::ACTION_EDIT,
                     'data-id' => $data->id,
-                    'data-parentid' => $data->tpc->themeplan_id,
-                    'data-title' => get_string('edit_themeplan_chapter', 'local_sic')
+                    'data-title' => get_string(Goal::ACTION_EDIT, 'local_coursegoals')
                 ]);
         }
 
-        if (has_capability('local/sic:manage_themeplans', $this->context)
-                && $data->tpc->can_be_deleted()) {
+        if (Goal::userCanManageGoals($this->context) && $data->goal->can_be_deleted()) {
             $icons[] = $OUTPUT->action_icon('#',
                 new \pix_icon('t/delete', get_string('delete'),'core'),
                 null, [
-                    'data-action' => Chapter::ACTION_DELETE,
+                    'data-action' => Goal::ACTION_DELETE,
                     'data-id' => $data->id,
-                    'data-parentid' => $data->tpc->themeplan_id,
-                    'data-title' => get_string('delete_themeplan_chapter', 'local_sic')
+                    'data-title' => get_string(Goal::ACTION_DELETE, 'local_coursegoals')
                 ]);
         }
 
-        $this->setupChapterActionsModals($data->id);
+        $this->setupGoalActionsModals($data->id);
 
         return \html_writer::span(implode('', $icons),'nowrap');
+    }
+
+    public function col_tasks($data) {
+        $html = '';
+        $tasks = $data->goal->getTasks(true);
+        foreach ($tasks as $task) {
+            $implodearr = [];
+            $implodearr[] = '<b>'.$task->get_name().'</b>';
+            $implodearr[] = $this->getTaskActions($task);
+            $label = implode('&ensp;', $implodearr);
+
+            $info = [];
+            $info[] = 'TODO: calculate comprule as text descr';
+            $info[] = 'TODO: calculate comprule as text descr1';
+
+            $html .= html_writer::start_tag('details', ['class' => 'taskinfo', 'open' => 'true']);
+            $html .= html_writer::tag('summary', "{$label}");
+            $html .= html_writer::alist($info);
+            $html .= html_writer::end_tag('details');
+            $this->setupTaskActionsModals($task->id);
+        }
+
+        $html .= $this->addNewTaskLink($data->id);
+        $this->setupAddNewTaskModal($data->id);
+        return $html;
     }
 
     public function get_sql_sort() {
@@ -166,8 +173,11 @@ class coursegoals_table extends table_sql
         global $DB;
 
         $whereconditions = [];
-        $params['courseid'] = $this->courseid;
-        $whereconditions[] = "cg.courseid = :courseid";
+        $params = [];
+        if (!empty($this->courseid)) {
+            $params['courseid'] = $this->courseid;
+            $whereconditions[] = "cg.courseid = :courseid";
+        }
 
         $whereclause = !empty($whereconditions) ? 'WHERE (' . implode(' AND ', $whereconditions) . ')' : "";
         $result = false;
@@ -222,9 +232,9 @@ class coursegoals_table extends table_sql
             return;
         }
 
-//        foreach ($this->rawdata as &$row) {
-//
-//        }
+        foreach ($this->rawdata as &$row) {
+            $row->goal = new Goal($row->id);
+        }
 
         // Set initial bars.
         if ($useinitialsbar) {
@@ -241,53 +251,6 @@ class coursegoals_table extends table_sql
         $base_url = new moodle_url('/local/coursegoals/index.php', $url_params);
         $table->define_baseurl($base_url);
         return $table;
-    }
-
-    /**
-     * @param Theme $theme
-     * @return string
-     * @throws \coding_exception
-     */
-    public function getThemeActions($theme) {
-        global $OUTPUT;
-        $icons = [];
-
-        if (has_capability('local/sic:manage_themeplans', $this->context)
-                && $theme->can_be_updated()) {
-            $icons[] = $OUTPUT->action_icon('#',
-                new \pix_icon('t/edit', get_string('edit'),'core'),
-                null, [
-                    'data-action' => Theme::ACTION_EDIT,
-                    'data-id' => $theme->id,
-                    'data-parentid' => $theme->item_idnumber,
-                    'data-title' => get_string(Theme::ACTION_EDIT, 'local_sic')
-                ]);
-        }
-
-        if (has_capability('local/sic:manage_themeplans', $this->context)
-                && $theme->can_be_deleted()) {
-            $icons[] = $OUTPUT->action_icon('#',
-                new \pix_icon('t/delete', get_string('delete'),'core'),
-                null, [
-                    'data-action' => Theme::ACTION_DELETE,
-                    'data-id' => $theme->id,
-                    'data-parentid' => $theme->item_idnumber,
-                    'data-title' => get_string(Theme::ACTION_DELETE, 'local_sic')
-                ]);
-        }
-
-        return \html_writer::span(implode('', $icons),'nowrap');
-    }
-
-    public function addNewThemeLink($chapterid) {
-        $link = html_writer::link('#',
-            '&#10133; '. get_string(Theme::ACTION_CREATE, 'local_sic'), [
-            'data-action' => Theme::ACTION_CREATE,
-            'data-parentid' => $chapterid,
-            'data-title' => get_string(Theme::ACTION_CREATE, 'local_sic')
-        ]);
-//        $this->setupAddNewThemeModal($chapterid);
-        return $link;
     }
 
     public function renderControls() {
@@ -344,43 +307,88 @@ class coursegoals_table extends table_sql
         echo html_writer::end_div();
     }
 
-    protected function setupThemeActionsModals($rowid) {
+
+    /**
+     * @param Task $task
+     * @return string
+     * @throws \coding_exception
+     */
+    public function getTaskActions($task) {
+        global $OUTPUT;
+        $icons = [];
+
+        if (Task::userCanManageTasks($this->context) && $task->can_be_updated()) {
+            $icons[] = $OUTPUT->action_icon('#',
+                new \pix_icon('t/edit', get_string('edit'),'core'),
+                null, [
+                    'data-action' => Task::ACTION_EDIT,
+                    'data-id' => $task->id,
+                    'data-title' => get_string(Task::ACTION_EDIT, 'local_coursegoals')
+                ]);
+        }
+
+        if (Task::userCanManageTasks($this->context) && $task->can_be_deleted()) {
+            $icons[] = $OUTPUT->action_icon('#',
+                new \pix_icon('t/delete', get_string('delete'),'core'),
+                null, [
+                    'data-action' => Task::ACTION_DELETE,
+                    'data-id' => $task->id,
+                    'data-title' => get_string(Task::ACTION_DELETE, 'local_coursegoals')
+                ]);
+        }
+
+        return \html_writer::span(implode('', $icons),'nowrap');
+    }
+
+    public function addNewTaskLink($goalid) {
+        $link = html_writer::link('#',
+            '&#10133; '. get_string(Task::ACTION_CREATE, 'local_coursegoals'), [
+                'data-action' => Task::ACTION_CREATE,
+                'data-parentid' => $goalid,
+                'data-title' => get_string(Task::ACTION_CREATE, 'local_coursegoals')
+            ]);
+        return $link;
+    }
+
+    protected function setupGoalActionsModals($rowid) {
         $setupModals = [];
         $setupModals[] = [
-            'elementSelector' => '[data-action="'.Theme::ACTION_EDIT.'"][data-id="'.$rowid.'"]',
-            'formClass' => \local_sic\form\themeplan_theme_form::class,
+            'elementSelector' => '[data-action="'.Goal::ACTION_ACTIVATE.'"][data-id="'.$rowid.'"]',
+            'formClass' => \local_coursegoals\form\goal_form::class,
         ];
         $setupModals[] = [
-            'elementSelector' => '[data-action="'.Theme::ACTION_DELETE.'"][data-id="'.$rowid.'"]',
-            'formClass' => \local_sic\form\themeplan_theme_form::class,
+            'elementSelector' => '[data-action="'.Goal::ACTION_EDIT.'"][data-id="'.$rowid.'"]',
+            'formClass' => \local_coursegoals\form\goal_form::class,
         ];
-        $this->page->requires->js_call_amd('local_sic/themeplan', 'setupModals', [
+        $setupModals[] = [
+            'elementSelector' => '[data-action="'.Goal::ACTION_DELETE.'"][data-id="'.$rowid.'"]',
+            'formClass' => \local_coursegoals\form\goal_form::class,
+        ];
+        $this->page->requires->js_call_amd('local_coursegoals/coursegoals', 'setupModals', [$setupModals]);
+    }
+
+    protected function setupTaskActionsModals($rowid) {
+        $setupModals = [];
+        $setupModals[] = [
+            'elementSelector' => '[data-action="'.Task::ACTION_EDIT.'"][data-id="'.$rowid.'"]',
+            'formClass' => \local_coursegoals\form\task_form::class,
+        ];
+        $setupModals[] = [
+            'elementSelector' => '[data-action="'.Task::ACTION_DELETE.'"][data-id="'.$rowid.'"]',
+            'formClass' => \local_coursegoals\form\task_form::class,
+        ];
+        $this->page->requires->js_call_amd('local_coursegoals/coursegoals', 'setupModals', [
             $setupModals
         ]);
     }
 
-    protected function setupChapterActionsModals($rowid) {
+    protected function setupAddNewTaskModal($goalid) {
         $setupModals = [];
         $setupModals[] = [
-            'elementSelector' => '[data-action="'.Chapter::ACTION_EDIT.'"][data-id="'.$rowid.'"]',
-            'formClass' => \local_sic\form\themeplan_chapter_form::class,
+            'elementSelector' => '[data-action="'.Task::ACTION_CREATE.'"][data-parentid="'.$goalid.'"]',
+            'formClass' => \local_coursegoals\form\task_form::class,
         ];
-        $setupModals[] = [
-            'elementSelector' => '[data-action="'.Chapter::ACTION_DELETE.'"][data-id="'.$rowid.'"]',
-            'formClass' => \local_sic\form\themeplan_chapter_form::class,
-        ];
-        $this->page->requires->js_call_amd('local_sic/themeplan', 'setupModals', [
-            $setupModals
-        ]);
-    }
-
-    protected function setupAddNewThemeModal($chapterid) {
-        $setupModals = [];
-        $setupModals[] = [
-            'elementSelector' => '[data-action="'.Theme::ACTION_CREATE.'"][data-parentid="'.$chapterid.'"]',
-            'formClass' => \local_sic\form\themeplan_theme_form::class,
-        ];
-        $this->page->requires->js_call_amd('local_sic/themeplan', 'setupModals', [
+        $this->page->requires->js_call_amd('local_coursegoals/coursegoals', 'setupModals', [
             $setupModals
         ]);
     }

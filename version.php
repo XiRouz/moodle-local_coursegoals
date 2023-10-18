@@ -24,7 +24,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2023101600;
+$plugin->version = 2023101601;
 $plugin->requires = 2022041900;
 $plugin->component = 'local_coursegoals';
 $plugin->release = "v0.1 ({$plugin->version})";

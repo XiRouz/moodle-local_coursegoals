@@ -9,6 +9,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 use \local_coursegoals\helper;
+use \local_coursegoals\Goal;
 
 function local_coursegoals_before_footer() {
 
@@ -20,7 +21,7 @@ function local_coursegoals_before_footer() {
 
         // check if any goals for this course exist
         global $COURSE;
-        if (! helper::courseHasGoals($COURSE->id))
+        if (! Goal::getGoalsInCourse($COURSE->id, Goal::STATUS_ACTIVE, true))
             return '';
 
         // todo: check for available goals (availability API)

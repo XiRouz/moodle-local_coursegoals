@@ -4,36 +4,31 @@ namespace local_coursegoals\form;
 
 use context;
 use moodle_url;
+use local_coursegoals\Task;
 use local_coursegoals\Goal;
 use local_coursegoals\api;
 
-class goal_form extends \core_form\dynamic_form {
+class task_form extends \core_form\dynamic_form {
 
     protected function definition()
     {
         $mform = $this->_form;
 
         $action = $this->optional_param('action', null, PARAM_ALPHAEXT);
-
-        $mform->addElement('hidden', 'id');
-        $mform->setType('id', PARAM_INT);
+        $goalid = $this->optional_param('dataparentid', null, PARAM_INT)
+            ?? $this->optional_param('coursegoalid', null, PARAM_INT);
 
         $mform->addElement('hidden', 'action');
         $mform->setType('action', PARAM_ALPHAEXT);
 
-        if ($action == Goal::ACTION_CREATE || $action == Goal::ACTION_EDIT) {
-            if ($action == Goal::ACTION_CREATE) {
-                $courses = \core_course_category::search_courses([], [], ['local/coursegoals:manage_goals_in_course']);
-                $coursesOptions = [0 => get_string('choosedots')];
-                foreach ($courses as $id => $course) {
-                    $coursesOptions[$id] = format_string($course->fullname);
-                }
-                $mform->addElement('select', 'courseid', get_string('course'), $coursesOptions);
-                $mform->addHelpButton('courseid', 'coursechoice', 'local_coursegoals');
-                $mform->addRule('courseid', null, 'required');
-                $mform->setType('courseid', PARAM_INT);
-            }
+        $mform->addElement('hidden', 'id');
+        $mform->setType('id', PARAM_INT);
 
+        if ($action == Task::ACTION_CREATE || $action == Task::ACTION_EDIT) {
+            if ($action == Task::ACTION_CREATE) {
+                $mform->addElement('hidden', 'coursegoalid');
+                $mform->setType('coursegoalid', PARAM_INT);
+            }
             $mform->addElement('text', 'name', get_string('name'));
             $mform->addHelpButton('name', 'formatstring_naming', 'local_coursegoals');
             $mform->setType('name', PARAM_TEXT);
@@ -42,27 +37,16 @@ class goal_form extends \core_form\dynamic_form {
             $mform->addElement('textarea', 'description', get_string('description'));
             $mform->setType('description', PARAM_TEXT);
 
-            // TODO: availability
-            // TODO: onfinish
+            // TODO: comprules form elements: selector of comprule and its params
 
-        } else if ($action == Goal::ACTION_DELETE) {
+        } else if ($action == Task::ACTION_DELETE) {
             $mform->addElement('static', 'name', get_string('name'));
             $mform->setType('name', PARAM_TEXT);
 
             $mform->addElement('static', 'description', get_string('description'));
             $mform->setType('description', PARAM_TEXT);
 
-            $mform->addElement('static', 'confirm', '', get_string('ays_'.Goal::ACTION_DELETE, 'local_coursegoals'));
-            $mform->setType('confirm', PARAM_TEXT);
-
-        } else if ($action == Goal::ACTION_ACTIVATE) {
-            $mform->addElement('static', 'name', get_string('name'));
-            $mform->setType('name', PARAM_TEXT);
-
-            $mform->addElement('static', 'description', get_string('description'));
-            $mform->setType('description', PARAM_TEXT);
-
-            $mform->addElement('static', 'confirm', '', get_string(Goal::ACTION_ACTIVATE.'_explained', 'local_coursegoals'));
+            $mform->addElement('static', 'confirm', '', get_string('ays_'.Task::ACTION_DELETE, 'local_coursegoals'));
             $mform->setType('confirm', PARAM_TEXT);
 
         }
@@ -78,29 +62,25 @@ class goal_form extends \core_form\dynamic_form {
     public function validation($data, $files) {
         $errors = [];
 
-        $action = $this->optional_param('action', null, PARAM_ALPHAEXT);
-        if ($action == Goal::ACTION_CREATE && (!isset($data['courseid']) || $data['courseid'] == 0)) {
-            $errors['courseid'] = get_string('error:choose_course', 'local_coursegoals');
-        }
+//        $action = $this->optional_param('action', null, PARAM_ALPHAEXT);
+//        if ($action == Goal::ACTION_CREATE && (!isset($data['courseid']) || $data['courseid'] == 0)) {
+//            $errors['courseid'] = get_string('error:choose_course', 'local_coursegoals');
+//        }
 
         return $errors;
     }
 
     public function process_dynamic_submission() {
         $data = $this->get_data();
-        // TODO: try to rework this universality, it may cause trouble
         switch ($data->action) {
-            case Goal::ACTION_CREATE:
-                list($result, $errors, $redirecturl) = api::createGoal($data);
+            case Task::ACTION_CREATE:
+                list($result, $errors, $redirecturl) = api::createTask($data);
                 break;
-            case Goal::ACTION_EDIT:
-                list($result, $errors, $redirecturl) = api::editGoal($data);
+            case Task::ACTION_EDIT:
+                list($result, $errors, $redirecturl) = api::editTask($data);
                 break;
-            case Goal::ACTION_DELETE:
-                list($result, $errors, $redirecturl) = api::deleteGoal($data);
-                break;
-            case Goal::ACTION_ACTIVATE:
-                list($result, $errors, $redirecturl) = api::activateGoal($data);
+            case Task::ACTION_DELETE:
+                list($result, $errors, $redirecturl) = api::deleteTask($data);
                 break;
         }
         return [
@@ -119,13 +99,16 @@ class goal_form extends \core_form\dynamic_form {
     public function set_data_for_dynamic_submission(): void {
         $data = [];
         $data['action'] = $this->optional_param('action', null, PARAM_ALPHAEXT);
+        if ($data['action'] == Task::ACTION_CREATE) {
+            $data['coursegoalid'] = $this->optional_param('coursegoalid', null, PARAM_INT);
+        }
         $id = $this->optional_param('dataid', null, PARAM_INT);
         if ($id) {
-            $goal = new Goal($id);
-            $data['id'] = $goal->id;
-            $data['courseid'] = $goal->courseid;
-            $data['name'] = $goal->name;
-            $data['description'] = $goal->description;
+            $task = new Task($id);
+            $data['id'] = $task->id;
+            // TODO: load comprules defaults for form
+            $data['name'] = $task->name;
+            $data['description'] = $task->description;
         }
 
         $data = (object)$data;
@@ -142,7 +125,7 @@ class goal_form extends \core_form\dynamic_form {
      */
     protected function check_access_for_dynamic_submission(): void {
         $context = $this->get_context_for_dynamic_submission();
-        if(! Goal::userCanManageGoals($context)) {
+        if(! Task::userCanManageTasks($context)) {
             throw new \moodle_exception('nocapabilitytousethisservice');
         }
     }

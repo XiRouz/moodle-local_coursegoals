@@ -77,33 +77,4 @@ class helper
         return 0;
     }
 
-    public static function courseHasGoals($courseid, $goalStatus = Goal::STATUS_ACTIVE): bool {
-        global $DB;
-
-        $whereconditions = [];
-        $params['courseid'] = $courseid;
-        $whereconditions[] = "courseid = :courseid";
-        if (is_array($goalStatus)) {
-            list($statusval, $statusparams) = $DB->get_in_or_equal($goalStatus, SQL_PARAMS_NAMED);
-            $whereconditions[] = "status $statusval";
-            $params = array_merge($params, $statusparams);
-        } else if (is_numeric($goalStatus)) {
-            $whereconditions[] = "status = :status";
-            $params['status'] = $goalStatus;
-        }
-        $whereclause = !empty($whereconditions) ? "WHERE (" . implode(" AND ", $whereconditions) . ")" : "";
-        $sql = "
-            SELECT cg.*
-            FROM {coursegoals} cg
-            $whereclause
-            ORDER BY cg.id DESC
-        ";
-        $result = $DB->get_records_sql($sql, $params);
-        if (empty($result)) {
-            return false;
-        } else {
-            return true;
-        }
-    }
-
 }
