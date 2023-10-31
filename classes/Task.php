@@ -91,6 +91,19 @@ class Task extends database_object
         return Goal::userCanManageGoals($context);
     }
 
+    public static function find($params) {
+        global $DB;
+        if (!is_array($params) || empty($params)) {
+            return false;
+        }
+
+        $id = $DB->get_field(self::get_table_name(), 'id', $params);
+        if (!$id) {
+            return null;
+        }
+        return new self($id);
+    }
+
     /**
      * @throws \coding_exception
      */

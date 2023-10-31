@@ -1,13 +1,13 @@
 <?php
 
-namespace comprules_cmcompleted;
+namespace comprules_cmcompleteddb;
 
 defined('MOODLE_INTERNAL') || die();
 
 use local_coursegoals\Goal;
 use local_coursegoals\Task;
 
-class cmcompleted_comprule extends \local_coursegoals\comprule
+class cmcompleteddb_comprule extends \local_coursegoals\comprule
 {
     const COMPLETION_FAIL = -2;
     const COMPLETION_WARNING = -1;
@@ -16,7 +16,7 @@ class cmcompleted_comprule extends \local_coursegoals\comprule
 
     public static function getName()
     {
-        return 'cmcompleted';
+        return 'cmcompleteddb';
     }
 
     /** Handle and encode parameters from form array
@@ -25,16 +25,16 @@ class cmcompleted_comprule extends \local_coursegoals\comprule
      */
     public static function encodeParams($params)
     {
-        return $params['cmid'];
+        return json_encode($params); // TODO: replace to inserting or updating in DB?
     }
 
-    /** Handle and decode parameters to array
-     * @param string $params
+    /** Handle and decode parameters from JSON to array
+     * @param string $jsonparams
      * @return array
      */
-    public static function decodeParams($params)
+    public static function decodeParams($jsonparams)
     {
-        return ['cmid' => $params];
+        return json_decode($jsonparams, true);
     }
 
     public static function calculateCompletion($userid, $task)
@@ -88,56 +88,8 @@ class cmcompleted_comprule extends \local_coursegoals\comprule
             $courseid = $goal->courseid;
             $cminfo = \cm_info::create((object)['id' => $params['cmid'], 'course' => $courseid]);
             $link = \html_writer::link($cminfo->get_url(), format_string($cminfo->name));
-            return get_string('completioncondition', 'comprules_cmcompleted', $link);
+            return get_string('completioncondition', 'comprules_cmcompleteddb', $link);
         }
         return '';
     }
-
-    public static function handleCreate($task)
-    {
-        return true;
-    }
-
-    public static function handleUpdate($task)
-    {
-        return true;
-    }
-
-    public static function handleDelete($task)
-    {
-        return true;
-    }
-
-    /* =========== OWN FUNCTIONS ========= */
-
-    /**
-     * @param $cmid
-     * @param $active
-     * @return Task[]
-     */
-    public static function getTasksByCmid($cmid, $active = true) {
-        global $DB;
-        $params = ['cmid' => $cmid];
-        $whereconditions = [];
-        $whereconditions[] = "cgt.comprule_params = :cmid";
-        if ($active) {
-            $params['status'] = \local_coursegoals\Goal::STATUS_ACTIVE;
-            $whereconditions[] = "cg.status = :status";
-        }
-
-        $whereclause = !empty($whereconditions) ? 'WHERE (' . implode(' AND ', $whereconditions) . ')' : "";
-        $sql = "
-        SELECT cgt.*
-        FROM {".\local_coursegoals\Task::TABLE."} cgt
-        JOIN {".\local_coursegoals\Goal::TABLE."} cg ON cg.id = cgt.coursegoalid
-        $whereclause
-        ";
-        $instances = $DB->get_records_sql($sql, $params);
-        $objects = [];
-        foreach ($instances as $instance) {
-            $objects[$instance->id] = new Task($instance->id);
-        }
-        return $objects;
-    }
-
 }

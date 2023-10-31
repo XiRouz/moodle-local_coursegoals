@@ -73,7 +73,8 @@ class api {
         $errors = [];
         try {
             $task = Task::create($data);
-            $result = !empty($task);
+            $cruleresult = self::handleCompruleCreation($task);
+            $result = !empty($task) && $cruleresult;
         } catch (Exception $e) { $errors[] = $e->getMessage(); }
 
         $redirecturl = self::resolveRedirectURL($data->redirecturl);
@@ -85,7 +86,9 @@ class api {
         $errors = [];
         try {
             $task = new Task($data->id);
-            $result = $task->update($data);
+            $taskresult = $task->update($data);
+            $cruleresult = self::handleCompruleUpdate($task);
+            $result = $taskresult && $cruleresult;
         } catch (Exception $e) { $errors[] = $e->getMessage(); }
 
         $redirecturl = self::resolveRedirectURL($data->redirecturl);
@@ -97,10 +100,54 @@ class api {
         $errors = [];
         try {
             $task = new Task($data->id);
-            $result = $task->delete();
+            $cruleresult = self::handleCompruleDeletion($task);
+            $taskresult = $task->delete();
+            $result = $taskresult && $cruleresult;
         } catch (Exception $e) { $errors[] = $e->getMessage(); }
 
         $redirecturl = self::resolveRedirectURL($data->redirecturl);
         return [$result, $errors, $redirecturl];
+    }
+
+    public static function handleCompruleCreation($task) {
+        $comprule = comprule::getCompruleByID($task->compruleid);
+        $class = comprule::makeCompruleClassname($comprule);
+        $created = false;
+        try {
+            $crule = new $class();
+            $created = $crule::handleCreate($task);
+        } catch (Exception $e) {
+            debugging($e->getMessage(), DEBUG_DEVELOPER);
+            $created = false;
+        }
+        return $created;
+    }
+
+    public static function handleCompruleUpdate($task) {
+        $comprule = comprule::getCompruleByID($task->compruleid);
+        $class = comprule::makeCompruleClassname($comprule);
+        $updated = false;
+        try {
+            $crule = new $class();
+            $updated = $crule::handleUpdate($task);
+        } catch (Exception $e) {
+            debugging($e->getMessage(), DEBUG_DEVELOPER);
+            $updated = false;
+        }
+        return $updated;
+    }
+
+    public static function handleCompruleDeletion($task) {
+        $comprule = comprule::getCompruleByID($task->compruleid);
+        $class = comprule::makeCompruleClassname($comprule);
+        $deleted = false;
+        try {
+            $crule = new $class();
+            $deleted = $crule::handleDelete($task);
+        } catch (Exception $e) {
+            debugging($e->getMessage(), DEBUG_DEVELOPER);
+            $deleted = false;
+        }
+        return $deleted;
     }
 }

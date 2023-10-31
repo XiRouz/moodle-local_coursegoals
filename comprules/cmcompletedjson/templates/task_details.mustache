@@ -1,0 +1,17 @@
+{{!
+    @template comprules_cmcompletedjson/task_details
+}}
+
+<div>
+    <p class="mb-0">{{#str}}task, local_coursegoals{{/str}}: {{taskname}}</p>
+    {{#taskdescription}}
+        <p class="mb-0"><small>{{taskdescription}}</small></p>
+    {{/taskdescription}}
+    <p class="mt-1 mb-0">
+        {{#str}}element, comprules_cmcompletedjson{{/str}}: <a class="aalink" href="{{cmlink}}">{{cmname}}</a>
+    </p>
+    {{#gradepass}}
+        <p class="mb-0">{{#str}}gradepass, comprules_cmcompletedjson{{/str}}: {{gradepass}}</p>
+    {{/gradepass}}
+    <p class="mb-0">{{#str}}yourgrade, comprules_cmcompletedjson{{/str}}: {{yourgrade}}</p>
+</div>
