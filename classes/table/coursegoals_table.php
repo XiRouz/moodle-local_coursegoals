@@ -7,6 +7,8 @@ global $CFG;
 
 require_once($CFG->libdir . '/tablelib.php');
 
+use local_coursegoals\comprule;
+use Exception;
 use table_sql;
 use moodle_url;
 use html_writer;
@@ -131,14 +133,26 @@ class coursegoals_table extends table_sql
         $html = '';
         $tasks = $data->goal->getTasks(true);
         foreach ($tasks as $task) {
+            $comprule = comprule::getCompruleByID($task->compruleid);
+            $class = comprule::makeCompruleClassname($comprule);
+            try {
+                $crule = new $class();
+            } catch (Exception $e) {
+                debugging($e->getMessage(), DEBUG_DEVELOPER);
+            }
             $implodearr = [];
             $implodearr[] = '<b>'.$task->get_name().'</b>';
             $implodearr[] = $this->getTaskActions($task);
             $label = implode('&ensp;', $implodearr);
 
             $info = [];
-            $info[] = 'TODO: calculate comprule as text descr';
-            $info[] = 'TODO: calculate comprule as text descr1';
+            $info[] = format_string($task->description);
+            if (isset($crule)) {
+                $ruleConditions = $crule->getCompletionConditions($task);
+                if (!empty($ruleConditions)) {
+                    $info[] = $ruleConditions;
+                }
+            }
 
             $html .= html_writer::start_tag('details', ['class' => 'taskinfo', 'open' => 'true']);
             $html .= html_writer::tag('summary', "{$label}");
@@ -322,7 +336,7 @@ class coursegoals_table extends table_sql
                 new \pix_icon('t/edit', get_string('edit'),'core'),
                 null, [
                     'data-action' => Task::ACTION_EDIT,
-                    'data-id' => $task->id,
+                    'data-taskid' => $task->id,
                     'data-title' => get_string(Task::ACTION_EDIT, 'local_coursegoals')
                 ]);
         }
@@ -332,7 +346,7 @@ class coursegoals_table extends table_sql
                 new \pix_icon('t/delete', get_string('delete'),'core'),
                 null, [
                     'data-action' => Task::ACTION_DELETE,
-                    'data-id' => $task->id,
+                    'data-taskid' => $task->id,
                     'data-title' => get_string(Task::ACTION_DELETE, 'local_coursegoals')
                 ]);
         }
@@ -344,7 +358,7 @@ class coursegoals_table extends table_sql
         $link = html_writer::link('#',
             '&#10133; '. get_string(Task::ACTION_CREATE, 'local_coursegoals'), [
                 'data-action' => Task::ACTION_CREATE,
-                'data-parentid' => $goalid,
+                'data-coursegoalid' => $goalid,
                 'data-title' => get_string(Task::ACTION_CREATE, 'local_coursegoals')
             ]);
         return $link;
@@ -368,28 +382,21 @@ class coursegoals_table extends table_sql
     }
 
     protected function setupTaskActionsModals($rowid) {
-        $setupModals = [];
-        $setupModals[] = [
-            'elementSelector' => '[data-action="'.Task::ACTION_EDIT.'"][data-id="'.$rowid.'"]',
-            'formClass' => \local_coursegoals\form\task_form::class,
-        ];
-        $setupModals[] = [
-            'elementSelector' => '[data-action="'.Task::ACTION_DELETE.'"][data-id="'.$rowid.'"]',
-            'formClass' => \local_coursegoals\form\task_form::class,
-        ];
-        $this->page->requires->js_call_amd('local_coursegoals/coursegoals', 'setupModals', [
-            $setupModals
+        $this->page->requires->js_call_amd('local_coursegoals/coursegoals', 'setupTaskModalForm', [
+            'elementSelector' => '[data-action="'.Task::ACTION_EDIT.'"][data-taskid="'.$rowid.'"]',
+            'formClass' => \local_coursegoals\form\task_edit_form::class,
+        ]);
+
+        $this->page->requires->js_call_amd('local_coursegoals/coursegoals', 'setupTaskModalForm', [
+            'elementSelector' => '[data-action="'.Task::ACTION_DELETE.'"][data-taskid="'.$rowid.'"]',
+            'formClass' => \local_coursegoals\form\task_delete_form::class,
         ]);
     }
 
     protected function setupAddNewTaskModal($goalid) {
-        $setupModals = [];
-        $setupModals[] = [
-            'elementSelector' => '[data-action="'.Task::ACTION_CREATE.'"][data-parentid="'.$goalid.'"]',
-            'formClass' => \local_coursegoals\form\task_form::class,
-        ];
-        $this->page->requires->js_call_amd('local_coursegoals/coursegoals', 'setupModals', [
-            $setupModals
+        $this->page->requires->js_call_amd('local_coursegoals/coursegoals', 'setupTaskModalForm', [
+            'elementSelector' => '[data-action="'.Task::ACTION_CREATE.'"][data-coursegoalid="'.$goalid.'"]',
+            'formClass' => \local_coursegoals\form\task_create_form::class,
         ]);
     }
 

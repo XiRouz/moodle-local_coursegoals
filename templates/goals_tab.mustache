@@ -4,17 +4,34 @@
 
 <div id="cg_goals_tab" class="goals-main-tab" style="display: none">
     <div id="goals_maintab_wrapper">
-        <details id="cg_details_maintab">
-            <summary>
-                <span class="h4">{{#str}}displayname, local_coursegoals{{/str}}</span>
+        <details id="cg_details_maintab" class="cg-details">
+            <summary class="cg-summary-main">
+                <span class="h3 ml-2">{{#str}}displayname, local_coursegoals{{/str}}</span>
             </summary>
-           <div class="goals-maintab-content">
+           <div class="container goals-maintab-content"
+                style="margin: 0; padding-left: 1.5rem; padding-right: 1.5rem;"> {{! style needed cause bootstrap classes are defined later }}
                {{#goals}}
-                   <div>
-                       <p>Goal: {{goalname}}</p>
+                   <div class="row goal-contents">
+                       <div class="col-3">
+                           <span>{{goalname}}</span>
+                           <br/>
+                           <small>{{goaldescription}}</small>
+                       </div>
+                       <div class="col-9">
+                           <div class="row">
+                           {{#tasks}}
+                               <div data-taskid="{{taskrefid}}" class="col-sm-auto cg-taskcb">
+                                   {{{taskcompletedoutput}}}
+                               </div>
+                           {{/tasks}}
+                           </div>
+                       </div>
+                   </div>
+                   <hr/>
+                   <div class="cg-task-details">
                        {{#tasks}}
-                           <div>
-                               <p>Task: {{taskname}}</p>
+                           <div data-taskref="{{taskrefid}}" style="display: none">
+                               {{{taskdetailshtml}}}
                            </div>
                        {{/tasks}}
                    </div>
@@ -23,64 +40,3 @@
         </details>
     </div>
 </div>
-
-
-
-<!--            <div class="req-tabs-div">-->
-<!--                <nav>-->
-<!--                    <div class="nav nav-tabs req-nav-tabs" id="nav-tab" role="tablist">-->
-<!--                        {{#enrolments}}-->
-<!--                            <a class="req-tab-item nav-item nav-link {{activetab}}" id="{{navid}}-tab" data-toggle="tab" href="#{{navid}}" role="tab" aria-controls="{{navid}}" aria-selected="true">{{trackname}}</a>-->
-<!--                        {{/enrolments}}-->
-<!--                    </div>-->
-<!--                </nav>-->
-<!--                <div class="tab-content" id="nav-tabContent">-->
-<!--                    {{#enrolments}}-->
-<!--                        <div class="tab-pane fade {{activetabcontent}}" id="{{navid}}" role="tabpanel" aria-labelledby="{{navid}}-tab">-->
-<!--                            <div class="req-tab">-->
-<!--                                <div class="req-tab-info">-->
-<!--                                    <div class="req-tab-content">-->
-<!--                                        <b>{{#str}}status, local_sicblock{{/str}}</b>: {{status}}<br/>-->
-<!--                                        {{#period}}-->
-<!--                                            <b>{{#str}}period, local_sicblock{{/str}}</b>: {{period}}<br/>-->
-<!--                                        {{/period}}-->
-<!--                                        <b>{{#str}}faculty, local_sicblock{{/str}}</b>: {{facultyname}}<br/>-->
-<!--                                        {{#trackerlink}}-->
-<!--                                            <a class="aalink" href="{{trackerlink}}">{{#str}}askaquestion, local_sicblock{{/str}}</a>-->
-<!--                                        {{/trackerlink}}-->
-<!--                                    </div>-->
-<!--                                </div>-->
-<!--                                <div class="req-tab-help">-->
-<!--                                    <div class="req-tab-content">-->
-<!--                                        {{#statusmsg}}-->
-<!--                                            <span><b>{{statusmsg}}</b></span><br/>-->
-<!--                                        {{/statusmsg}}-->
-<!--                                        {{#cmlink}}-->
-<!--                                            <a class="aalink" href="{{cmlink}}" target="_blank">{{cmname}}</a><br/>-->
-<!--                                        {{/cmlink}}-->
-<!--                                        {{#comments}}-->
-<!--                                            <span class="request-comments">{{#str}}comments, local_sicblock{{/str}}: <i>{{comments}}</i></span><br/>-->
-<!--                                        {{/comments}}-->
-<!--                                        {{! TODO: complete the template when other functionality will be ready }}-->
-<!--                                        {{#nextlesson}}-->
-<!--                                            <div class="request-nextlesson">-->
-<!--                                                &lt;!&ndash; next lesson here &ndash;&gt;-->
-<!--                                            </div>-->
-<!--                                        {{/nextlesson}}-->
-<!--                                        {{#certlink}}-->
-<!--                                            <div class="request-certlink">-->
-<!--                                                &lt;!&ndash; certlink here &ndash;&gt;-->
-<!--                                            </div>-->
-<!--                                        {{/certlink}}-->
-<!--                                        {{#pending}}-->
-<!--                                            <div class="request-pending">-->
-<!--                                                &lt;!&ndash; pending info here &ndash;&gt;-->
-<!--                                            </div>-->
-<!--                                        {{/pending}}-->
-<!--                                    </div>-->
-<!--                                </div>-->
-<!--                            </div>-->
-<!--                        </div>-->
-<!--                    {{/enrolments}}-->
-<!--                </div>-->
-<!--            </div>-->

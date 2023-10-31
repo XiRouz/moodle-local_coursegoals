@@ -4,6 +4,7 @@ namespace local_coursegoals;
 
 use Exception;
 use stdClass;
+use function GuzzleHttp\Promise\task;
 
 class Task extends database_object
 {
@@ -12,10 +13,6 @@ class Task extends database_object
     const ACTION_CREATE = 'create_task';
     const ACTION_EDIT = 'edit_task';
     const ACTION_DELETE = 'delete_task';
-
-    const STATUS_INACTIVE = 0;
-    const STATUS_ACTIVE = 1;
-    const STATUS_STOPPED = -1;
 
     public int $coursegoalid;
     public int $compruleid;
@@ -37,10 +34,56 @@ class Task extends database_object
 
     }
 
+    public function getTaskRecordForUser($userid = null) {
+        if (is_null($userid)) {
+            global $USER;
+            $userid = $USER->id;
+        }
+
+        $taskrecord = \local_coursegoals\TaskRecord::getTaskRecordByUserID($this->id, $userid);
+        if (empty($taskrecord)) {
+            $completed = $this->calculateCompletionForUser($userid);
+            if (is_numeric($completed)) {
+                $data = (object)[
+                    'taskid' => $this->id,
+                    'userid' => $userid,
+                    'completed' => $completed,
+                ];
+                $taskrecord = TaskRecord::create($data);
+            }
+        }
+        return $taskrecord;
+    }
+
+    public function updateTaskRecordForUser($userid = null) {
+        if (is_null($userid)) {
+            global $USER;
+            $userid = $USER->id;
+        }
+
+        $taskrecord = \local_coursegoals\TaskRecord::getTaskRecordByUserID($this->id, $userid);
+        if (!empty($taskrecord)) {
+            $completed = $this->calculateCompletionForUser($userid);
+            if (is_numeric($completed)) {
+                $newdata = (object)[
+                    'completed' => $completed,
+                ];
+                $taskrecord->update($newdata);
+            }
+        }
+    }
+
     public function calculateCompletionForUser($userid) {
-        // get comprule
-        // calc it inside comprule class
-        // update or insert result in taskrecord
+        $comprule = comprule::getCompruleByID($this->compruleid);
+        $class = comprule::makeCompruleClassname($comprule);
+        $completed = null;
+        try {
+            $crule = new $class();
+            $completed = $crule->calculateCompletion($userid, $this);
+        } catch (Exception $e) {
+            debugging($e->getMessage(), DEBUG_DEVELOPER);
+        }
+        return $completed;
     }
 
     public static function userCanManageTasks($context) {
@@ -53,8 +96,6 @@ class Task extends database_object
      */
     public static function create(\stdClass $fields)
     {
-        $fields->status = self::STATUS_INACTIVE;
-
         global $USER;
         if (!isset($fields->usercreated)) {
             $fields->usercreated = $USER->id;

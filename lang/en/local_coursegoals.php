@@ -11,8 +11,10 @@ defined('MOODLE_INTERNAL') || die();
 $string['pluginname'] = 'Course goals';
 
 // General
+$string['compruleid'] = 'Select completion rule';
 $string['coursechoice'] = 'The course goal will be tied to chosen course and its items';
 $string['displayname'] = 'Course goals';
+$string['task'] = 'Task';
 $string['tasks'] = 'Tasks';
 
 // Actions
@@ -37,8 +39,10 @@ $string['formatstring_naming_help'] = 'This field supports format plugins';
 
 // Errors
 $string['error:choose_course'] = 'Choose course';
+$string['error:choose_comprule'] = 'Choose completion rule';
 
 // Capabilities
 $string['coursegoals:manage_all_goals'] = 'Manage all course goals';
 $string['coursegoals:manage_goals_in_course'] = 'Manage goals in course';
+$string['coursegoals:complete_goals'] = 'Complete goals';
 

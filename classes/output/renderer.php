@@ -4,7 +4,11 @@ namespace local_coursegoals\output;
 
 use plugin_renderer_base;
 use stdClass;
-use \local_coursegoals\Goal;
+use Exception;
+use local_coursegoals\Goal;
+use local_coursegoals\comprule;
+use local_coursegoals\helper;
+
 /**
  * @package    local_coursegoals
  * @copyright  2023 Lavrentev Semyon
@@ -22,43 +26,73 @@ class renderer extends plugin_renderer_base {
     }
 
     private function prepareGoalsTabData() {
-        global $COURSE;
+        global $COURSE, $USER, $PAGE, $OUTPUT;
         $data = new stdClass();
 
         $goals = Goal::getGoalsInCourse($COURSE->id);
-
-        if (empty($goals)) {
-            $goal1 = new stdClass();
-            $goal1->goalname = "DUMMY GOALNAME1";
-            $task1 = (object)['taskname' => "TASKNAME1"];
-            $goal1->tasks[] = $task1;
-            $task2 = (object)['taskname' => "TASKNAME2"];
-            $goal1->tasks[] = $task2;
-
-            $data->goals[] = $goal1;
-
-            $goal2 = new stdClass();
-            $goal2->goalname = "GOALNAME2";
-            $othertask = (object)['taskname' => "other"];
-            $goal2->tasks[] = $othertask;
-
-            $data->goals[] = $goal2;
-        }
         
         foreach ($goals as $goal) {
             $goalrow = (object)[
                 'goalname' => $goal->get_name(),
+                'goaldescription' => format_string($goal->description),
             ];
             $tasks = $goal->getTasks(true);
             foreach ($tasks as $task) {
+                $taskDetailsOutput = '';
                 $taskrow = (object)[
-                    'taskname' => $task->get_name(),
+                    'taskrefid' => $task->id,
                 ];
+                $comprule = comprule::getCompruleByID($task->compruleid);
+                $cruleRenderer = $PAGE->get_renderer("comprules_{$comprule->name}");
+                if (empty($cruleRenderer)) {
+                    $cruleRenderer = $PAGE->get_renderer("local_coursegoals");
+                }
+
+                $taskrecord = $task->getTaskRecordForUser($USER->id);
+                if (!empty($taskrecord)) {
+                    $taskrow->taskcompletedoutput = $cruleRenderer->renderCompletion($task, $taskrecord);
+                }
+                if (plugin_supports('comprules', $comprule->name, helper::FEATURE_CUSTOMTASKDETAILS)) {
+                    try {
+                        $taskDetailsOutput = $cruleRenderer->renderTaskDetails($task);
+                    } catch (Exception $e) {
+                        debugging($e->getMessage(), DEBUG_DEVELOPER);
+                        $taskDetailsOutput = '';
+                    }
+                }
+                if (!empty($taskDetailsOutput)) {
+                    $taskrow->taskdetailshtml = $taskDetailsOutput;
+                } else {
+                    $taskrow->taskdetailshtml = $this->renderTaskDetails($task);
+                }
+
                 $goalrow->tasks[] = $taskrow;
             }
             $data->goals[] = $goalrow;
         }
 
         return $data;
+    }
+
+    public function renderTaskDetails($task) {
+        $data = new stdClass();
+        $data->taskname = $task->get_name();
+        if (!empty($task->description)) {
+            $data->taskdescription = format_string($task->description);
+        }
+        return $this->render_from_template('local_coursegoals/task_details', $data);
+    }
+
+    public function renderCompletion($task, $taskrecord) {
+        global $OUTPUT;
+        // $checkmark = '&#9989;';
+        // $redcross = '&#10060;';
+        $alt = $task->get_name();
+        $pix_id = $taskrecord->completed ? 'cb-complete' : 'cb-empty';
+        return $OUTPUT->pix_icon($pix_id, $alt, 'local_coursegoals');
+    }
+
+    public function makeCompruleTaskrendererClassname($compruleInstance) {
+        return "\\comprules_{$compruleInstance->name}\\output\\renderer";
     }
 }

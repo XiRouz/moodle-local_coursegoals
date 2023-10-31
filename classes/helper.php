@@ -4,6 +4,9 @@ namespace local_coursegoals;
 
 class helper
 {
+    const FEATURE_CUSTOMVIEW = 'customview';
+    const FEATURE_CUSTOMTASKDETAILS = 'customtaskdetails';
+
     /** Checks if user is on page, where rendering this block is allowed
      * @return bool
      */
@@ -65,7 +68,7 @@ class helper
     }
 
     /** Checks if user is on any of /my/.. pages
-     *@return int
+     * @return int
      */
     public static function isMyPage(): int {
         global $PAGE, $CFG;
@@ -75,6 +78,12 @@ class helper
             return 1;
         }
         return 0;
+    }
+
+    public static function canViewGoalsInCourse($courseid) {
+        // TODO: maybe reconsider this restriction
+        $context = \context_course::instance($courseid);
+        return has_capability('local/coursegoals:complete_goals', $context);
     }
 
 }

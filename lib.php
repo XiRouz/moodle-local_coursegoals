@@ -21,25 +21,32 @@ function local_coursegoals_before_footer() {
 
         // check if any goals for this course exist
         global $COURSE;
-        if (! Goal::getGoalsInCourse($COURSE->id, Goal::STATUS_ACTIVE, true))
+        if (! Goal::getGoalsInCourse($COURSE->id, null, true))
             return '';
+
+        if (! helper::canViewGoalsInCourse($COURSE->id)) {
+            return '';
+        }
 
         // todo: check for available goals (availability API)
 
         // if passed all checks, render or create\calculate goal task items for user
         global $PAGE;
 
+        // course page header - '#page-header'
+        // course content div - '.course-content'
+
         if (isloggedin() && !isguestuser()) {
             $output = $PAGE->get_renderer('local_coursegoals');
             $html .= $output->renderGoalsTab();
             $PAGE->requires->js_call_amd('local_coursegoals/coursegoals',
                 'initCourseGoalsTab',
-                ['#page-header']);
+                ['#page-header', 'last']);
         }
 
-    } catch (Exception $ex) {
+    } catch (Exception $e) {
         $html = '';
-        debugging($ex->getMessage(), DEBUG_DEVELOPER);
+        debugging($e->getMessage(), DEBUG_DEVELOPER);
     }
     return $html;
 }

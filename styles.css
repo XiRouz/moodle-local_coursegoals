@@ -1,7 +1,25 @@
 .goals-main-tab {
+    padding-top: 0.5rem;
+    padding-left: 1rem;
+    padding-right: 0.5rem;
     padding-bottom: 0.75rem;
 }
 
 .goals-maintab-content {
-    padding: 0.5rem;
+    padding: 1.5rem;
+    margin: 0;
 }
+
+.cg-summary-main::-webkit-details-marker {
+    /*margin: 1rem; doesnt work*/
+}
+
+/*.cg-details > .cg-summary-main {*/
+/*    list-style-type: '+';*/
+/*}*/
+
+/*.cg-details[open] > .cg-summary-main {*/
+/*    list-style-type: '-';*/
+/*}*/
+
+

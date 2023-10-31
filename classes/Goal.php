@@ -49,13 +49,6 @@ class Goal extends database_object
         return $this->update($data);
     }
 
-    public function calculateForUser($userid) {
-        $tasks = $this->getTasks(true);
-        foreach ($tasks as $task) {
-            $task->calculateCompletionForUser($userid);
-        }
-    }
-
     /**
      * @param bool $asClassObjects if true, function returns Task objects, else DB instances returned
      * @return Task[]|array tasks of goal as array of instances from DB or Task objects
@@ -75,16 +68,29 @@ class Goal extends database_object
         }
     }
 
-    public static function getGoalsInCourse($courseid, $goalStatus = Goal::STATUS_ACTIVE, $returnBool = false) {
+    /**
+     * @param $courseid
+     * @param null|int|array $goalStatus goal status filter, null converts to STATUS_ACTIVE, if no status filter needed - pass empty array
+     * @param $returnBool
+     * @return Goal[]|bool
+     * @throws \coding_exception
+     * @throws \dml_exception
+     */
+    public static function getGoalsInCourse($courseid, $goalStatus = null, $returnBool = false) {
         global $DB;
+        if (is_null($goalStatus)) {
+            $goalStatus = Goal::STATUS_ACTIVE;
+        }
 
         $whereconditions = [];
         $params['courseid'] = $courseid;
         $whereconditions[] = "courseid = :courseid";
         if (is_array($goalStatus)) {
-            list($statusval, $statusparams) = $DB->get_in_or_equal($goalStatus, SQL_PARAMS_NAMED);
-            $whereconditions[] = "status $statusval";
-            $params = array_merge($params, $statusparams);
+            if (!empty($goalStatus)) {
+                list($statusval, $statusparams) = $DB->get_in_or_equal($goalStatus, SQL_PARAMS_NAMED);
+                $whereconditions[] = "status $statusval";
+                $params = array_merge($params, $statusparams);
+            }
         } else if (is_numeric($goalStatus)) {
             $whereconditions[] = "status = :status";
             $params['status'] = $goalStatus;
@@ -108,6 +114,21 @@ class Goal extends database_object
                 $objects[$result->id] = new self($result->id);
             }
             return $objects;
+        }
+    }
+
+    public static function recalculateTaskCompletionsForUser($userid, $courseid = null) {
+        global $DB;
+        if (is_null($courseid)) {
+            // TODO: make a function or query for all available (by course) goals. Recalcs for all goals can be quite long
+        } else {
+            $goals = self::getGoalsInCourse($courseid);
+            foreach ($goals as $goal) {
+                $tasks = $goal->getTasks(true);
+                foreach ($tasks as $task) {
+                    $task->updateTaskRecordForUser($userid);
+                }
+            }
         }
     }
 

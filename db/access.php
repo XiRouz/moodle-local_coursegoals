@@ -43,5 +43,15 @@ $capabilities = array(
             'student' => CAP_PROHIBIT,
         )
     ),
+    'local/coursegoals:complete_goals' => array(
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_COURSE,
+        'archetypes' => array(
+            'teacher' => CAP_PREVENT,
+            'editingteacher' => CAP_PREVENT,
+            'manager' => CAP_PREVENT,
+            'student' => CAP_ALLOW,
+        )
+    ),
 );
 
