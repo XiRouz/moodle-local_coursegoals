@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/coursegoals/db" VERSION="20231031" COMMENT="XMLDB file for Moodle local_coursegoals"
+<XMLDB PATH="local/coursegoals/db" VERSION="20231101" COMMENT="XMLDB file for Moodle local_coursegoals"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -30,9 +30,10 @@
         <FIELD NAME="id" SEQUENCE="true" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="coursegoalid" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="compruleid" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="sectionid" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="false"/>
         <FIELD NAME="name" SEQUENCE="false" TYPE="char" LENGTH="255" NOTNULL="true"/>
         <FIELD NAME="description" SEQUENCE="false" TYPE="text" NOTNULL="false"/>
-        <FIELD NAME="comprule_params" SEQUENCE="false" TYPE="text" NOTNULL="false" COMMENT="Parameters of completion rule in JSON format"/>
+        <FIELD NAME="comprule_params" SEQUENCE="false" TYPE="text" NOTNULL="false" COMMENT="Parameters of completion rule (any string that suits completion rule needs: one parameter, JSON, instanceid of row in subplugin's table, etc)"/>
         <FIELD NAME="timecreated" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="timemodified" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="false"/>
         <FIELD NAME="usercreated" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true"/>
@@ -42,6 +43,24 @@
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
         <KEY NAME="coursegoalid" TYPE="foreign" FIELDS="coursegoalid" REFTABLE="coursegoals" REFFIELDS="id"/>
         <KEY NAME="compruleid" TYPE="foreign" FIELDS="compruleid" REFTABLE="coursegoals_comprule" REFFIELDS="id"/>
+      </KEYS>
+    </TABLE>
+
+    <TABLE NAME="coursegoals_section" COMMENT="Sections of goals that can be used to group tasks for better viewability">
+      <FIELDS>
+        <FIELD NAME="id" SEQUENCE="true" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="coursegoalid" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true" COMMENT="If not 0, section will be linked and show up only for tasks of chosen goal, otherwise section is general and can be used anywhere."/>
+        <FIELD NAME="name" SEQUENCE="false" TYPE="char" LENGTH="255" NOTNULL="true"/>
+        <FIELD NAME="displayedname" SEQUENCE="false" TYPE="text" NOTNULL="true" COMMENT="Short version of name for displaying it where needed"/>
+        <FIELD NAME="description" SEQUENCE="false" TYPE="text" NOTNULL="false"/>
+        <FIELD NAME="timecreated" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="timemodified" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="false"/>
+        <FIELD NAME="usercreated" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="usermodified" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="coursegoalid" TYPE="foreign" FIELDS="coursegoalid" REFTABLE="coursegoals" REFFIELDS="id"/>
       </KEYS>
     </TABLE>
 

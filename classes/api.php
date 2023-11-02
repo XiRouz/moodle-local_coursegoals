@@ -68,6 +68,42 @@ class api {
         return [$result, $errors, $redirecturl];
     }
 
+    public static function createSection($data) {
+        $result = false;
+        $errors = [];
+        try {
+            $section = Section::create($data);
+            $result = !empty($section);
+        } catch (Exception $e) { $errors[] = $e->getMessage(); }
+
+        $redirecturl = self::resolveRedirectURL($data->redirecturl);
+        return [$result, $errors, $redirecturl];
+    }
+
+    public static function editSection($data) {
+        $result = false;
+        $errors = [];
+        try {
+            $section = new Section($data->id);
+            $result = $section->update($data);
+        } catch (Exception $e) { $errors[] = $e->getMessage(); }
+
+        $redirecturl = self::resolveRedirectURL($data->redirecturl);
+        return [$result, $errors, $redirecturl];
+    }
+
+    public static function deleteSection($data) {
+        $result = false;
+        $errors = [];
+        try {
+            $section = new Section($data->id);
+            $result = $section->delete();
+        } catch (Exception $e) { $errors[] = $e->getMessage(); }
+
+        $redirecturl = self::resolveRedirectURL($data->redirecturl);
+        return [$result, $errors, $redirecturl];
+    }
+
     public static function createTask($data) {
         $result = false;
         $errors = [];

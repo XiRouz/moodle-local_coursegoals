@@ -5,6 +5,8 @@ namespace local_coursegoals\form;
 use context;
 use core\check\performance\debugging;
 use Exception;
+use local_coursegoals\Goal;
+use local_coursegoals\Section;
 use moodle_url;
 use local_coursegoals\Task;
 use local_coursegoals\api;
@@ -12,7 +14,7 @@ use local_coursegoals\comprule;
 use local_coursegoals\comprule_form;
 use local_coursegoals\helper;
 
-class task_create_form extends \core_form\dynamic_form {
+class section_edit_form extends \core_form\dynamic_form {
 
     protected function definition()
     {
@@ -24,46 +26,31 @@ class task_create_form extends \core_form\dynamic_form {
         $mform->addElement('hidden', 'id');
         $mform->setType('id', PARAM_INT);
 
-        $mform->addElement('hidden', 'coursegoalid');
-        $mform->setType('coursegoalid', PARAM_INT);
+        $mform->addElement('static', 'sections_explained', '', get_string('sections_explained', 'local_coursegoals'));
+        $mform->setType('sections_explained', PARAM_TEXT);
 
         $mform->addElement('text', 'name', get_string('name'));
         $mform->addHelpButton('name', 'formatstring_naming', 'local_coursegoals');
         $mform->setType('name', PARAM_TEXT);
         $mform->addRule('name', null, 'required');
 
+        $mform->addElement('text', 'displayedname', get_string('displayedname', 'local_coursegoals'));
+        $mform->addHelpButton('displayedname', 'displayedname', 'local_coursegoals');
+        $mform->setType('displayedname', PARAM_TEXT);
+        $mform->addRule('displayedname', null, 'required');
+
         $mform->addElement('textarea', 'description', get_string('description'));
         $mform->addHelpButton('description', 'formatstring_naming', 'local_coursegoals');
         $mform->setType('description', PARAM_TEXT);
 
-        $comprules = comprule::getComprules();
-        $comprulesOptions = [0 => get_string('choosedots')];
-        foreach ($comprules as $id => $rule) {
-            $comprulesOptions[$id] = get_string('pluginname', "comprules_{$rule->name}");
+        $coursegoalOptions = [0 => get_string('shared', 'local_coursegoals')];
+        $goals = Goal::getGoals();
+        foreach ($goals as $id => $goal) {
+            $coursegoalOptions[$id] = $goal->get_name();
         }
-        $mform->addElement('select', 'compruleid', get_string('compruleid', 'local_coursegoals'), $comprulesOptions);
-//           $mform->addHelpButton('compruleid', 'compruleid', 'local_coursegoals');
-        $mform->setType('compruleid', PARAM_INT);
-        $mform->setDefault('compruleid', 0);
-        foreach ($comprules as $id => $comprule) {
-            $class = comprule_form::makeCompruleFormClassname($comprule);
-            try {
-                $ruleFormObj = new $class();
-                $mformgroup = $ruleFormObj::getFormElementsGroup($mform);
-                if (!empty($mformgroup)) {
-                    $mform->addGroup($mformgroup, "crgr_{$comprule->name}", 'CRule parameters', /*null, false*/);
-                    $mform->setType("crgr_{$comprule->name}", PARAM_RAW);
-                    $mform->hideIf("crgr_{$comprule->name}", 'compruleid', 'neq', $id);
-
-                    if (plugin_supports('comprules', $comprule->name, helper::FEATURE_CUSTOMVIEW)) {
-                        // TODO: form elements for custom view if needed
-                    }
-                }
-            } catch (Exception $e) {
-                debugging($e->getMessage(), DEBUG_DEVELOPER);
-            }
-        }
-
+        $mform->addElement('select', 'coursegoalid', get_string('coursegoalid', 'local_coursegoals'), $coursegoalOptions);
+        $mform->addHelpButton('coursegoalid', 'coursegoalid', 'local_coursegoals');
+        $mform->setType('coursegoalid', PARAM_INT);
     }
 
     /**
@@ -75,41 +62,12 @@ class task_create_form extends \core_form\dynamic_form {
      */
     public function validation($data, $files) {
         $errors = [];
-
-        if ((!isset($data['compruleid']) || $data['compruleid'] == 0)) {
-            $errors['compruleid'] = get_string('error:choose_comprule', 'local_coursegoals');
-        }
-
-        if (isset($data['compruleid']) && $data['compruleid'] != 0) {
-            $comprule = comprule::getCompruleByID($data['compruleid']);
-            $class = comprule_form::makeCompruleFormClassname($comprule);
-            try {
-                $ruleFormObj = new $class();
-                $ruleErrors = $ruleFormObj::validateParams($data["crgr_{$comprule->name}"]);
-                if (!empty($ruleErrors)) {
-                    $errors["crgr_{$comprule->name}"] = $ruleErrors;
-                }
-            } catch (Exception $e) {
-                debugging($e->getMessage(), DEBUG_DEVELOPER);
-            }
-        }
-
         return $errors;
     }
 
     public function process_dynamic_submission() {
         $data = $this->get_data();
-        $comprule = comprule::getCompruleByID($data->compruleid);
-        $crgr_name = 'crgr_'.$comprule->name;
-        $class = comprule::makeCompruleClassname($comprule);
-        try {
-            $crule = new $class();
-            $data->comprule_params = $crule::encodeParams($data->$crgr_name);
-        } catch (Exception $e) {
-            debugging($e->getMessage(), DEBUG_DEVELOPER);
-        }
-
-        list($result, $errors, $redirecturl) = api::createTask($data);
+        list($result, $errors, $redirecturl) = api::editSection($data);
         return [
             'result' => $result,
             'errors' => $errors,
@@ -126,7 +84,16 @@ class task_create_form extends \core_form\dynamic_form {
     public function set_data_for_dynamic_submission(): void {
         $data = [];
         $data['action'] = $this->optional_param('action', null, PARAM_ALPHAEXT);
-        $data['coursegoalid'] = $this->optional_param('coursegoalid', null, PARAM_INT);
+        $id = $this->optional_param('sectionid', null, PARAM_INT);
+        if ($id) {
+            $section = new Section($id);
+            $data['id'] = $section->id;
+            $data['coursegoalid'] = $section->coursegoalid;
+            $data['name'] = $section->name;
+            $data['displayedname'] = $section->displayedname;
+            $data['description'] = $section->description;
+        }
+
         $data = (object)$data;
         $this->set_data($data);
     }
@@ -141,7 +108,7 @@ class task_create_form extends \core_form\dynamic_form {
      */
     protected function check_access_for_dynamic_submission(): void {
         $context = $this->get_context_for_dynamic_submission();
-        if(! Task::userCanManageTasks($context)) {
+        if(! Goal::userCanManageGoals($context)) {
             throw new \moodle_exception('nocapabilitytousethisservice');
         }
     }

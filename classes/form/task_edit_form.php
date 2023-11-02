@@ -32,6 +32,7 @@ class task_edit_form extends \core_form\dynamic_form {
         $mform->addRule('name', null, 'required');
 
         $mform->addElement('textarea', 'description', get_string('description'));
+        $mform->addHelpButton('description', 'formatstring_naming', 'local_coursegoals');
         $mform->setType('description', PARAM_TEXT);
 
         $comprules = comprule::getComprules();

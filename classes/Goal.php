@@ -68,23 +68,39 @@ class Goal extends database_object
         }
     }
 
+    public function getSectionsAndTasks() {
+//        global $DB;
+//        $instances = $DB->get_records_select(Task::TABLE, 'coursegoalid = :coursegoalid', ['coursegoalid' => $this->id]);
+//        if ($asClassObjects) {
+//            $objects = [];
+//            foreach ($instances as $instance) {
+//                $objects[$instance->id] = new \local_coursegoals\Task($instance->id);
+//            }
+//            return $objects;
+//        } else {
+//            return $instances;
+//        }
+    }
+
     /**
-     * @param $courseid
+     * @param null|int $courseid
      * @param null|int|array $goalStatus goal status filter, null converts to STATUS_ACTIVE, if no status filter needed - pass empty array
-     * @param $returnBool
+     * @param bool $returnBool
      * @return Goal[]|bool
      * @throws \coding_exception
      * @throws \dml_exception
      */
-    public static function getGoalsInCourse($courseid, $goalStatus = null, $returnBool = false) {
+    public static function getGoals($courseid = null, $goalStatus = null, $returnBool = false) {
         global $DB;
         if (is_null($goalStatus)) {
             $goalStatus = Goal::STATUS_ACTIVE;
         }
 
         $whereconditions = [];
-        $params['courseid'] = $courseid;
-        $whereconditions[] = "courseid = :courseid";
+        if (!empty($courseid)) {
+            $params['courseid'] = $courseid;
+            $whereconditions[] = "courseid = :courseid";
+        }
         if (is_array($goalStatus)) {
             if (!empty($goalStatus)) {
                 list($statusval, $statusparams) = $DB->get_in_or_equal($goalStatus, SQL_PARAMS_NAMED);
@@ -122,7 +138,7 @@ class Goal extends database_object
         if (is_null($courseid)) {
             // TODO: make a function or query for all available (by course) goals. Recalcs for all goals can be quite long
         } else {
-            $goals = self::getGoalsInCourse($courseid);
+            $goals = self::getGoals($courseid);
             foreach ($goals as $goal) {
                 $tasks = $goal->getTasks(true);
                 foreach ($tasks as $task) {

@@ -29,7 +29,7 @@ class renderer extends plugin_renderer_base {
         global $COURSE, $USER, $PAGE, $OUTPUT;
         $data = new stdClass();
 
-        $goals = Goal::getGoalsInCourse($COURSE->id);
+        $goals = Goal::getGoals($COURSE->id);
         
         foreach ($goals as $goal) {
             $goalrow = (object)[

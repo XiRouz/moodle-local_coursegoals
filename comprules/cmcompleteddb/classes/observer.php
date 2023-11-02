@@ -9,7 +9,7 @@ class observer
         return;
         $gradeitem = $event->get_grade()->grade_item;
 
-        $goals = \local_coursegoals\Goal::getGoalsInCourse($event->courseid);
+        $goals = \local_coursegoals\Goal::getGoals($event->courseid);
         foreach ($goals as $goal) {
             $tasks = $goal->getTasks(true);
             foreach ($tasks as $task) {

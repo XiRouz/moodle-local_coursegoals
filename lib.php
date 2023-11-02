@@ -21,7 +21,7 @@ function local_coursegoals_before_footer() {
 
         // check if any goals for this course exist
         global $COURSE;
-        if (! Goal::getGoalsInCourse($COURSE->id, null, true))
+        if (! Goal::getGoals($COURSE->id, null, true))
             return '';
 
         if (! helper::canViewGoalsInCourse($COURSE->id)) {
