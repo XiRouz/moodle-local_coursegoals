@@ -48,8 +48,8 @@ class section_edit_form extends \core_form\dynamic_form {
         foreach ($goals as $id => $goal) {
             $coursegoalOptions[$id] = $goal->get_name();
         }
-        $mform->addElement('select', 'coursegoalid', get_string('coursegoalid', 'local_coursegoals'), $coursegoalOptions);
-        $mform->addHelpButton('coursegoalid', 'coursegoalid', 'local_coursegoals');
+        $mform->addElement('select', 'coursegoalid', get_string('section_coursegoalid_select', 'local_coursegoals'), $coursegoalOptions);
+        $mform->addHelpButton('coursegoalid', 'section_coursegoalid_select', 'local_coursegoals');
         $mform->setType('coursegoalid', PARAM_INT);
     }
 

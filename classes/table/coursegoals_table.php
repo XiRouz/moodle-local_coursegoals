@@ -14,6 +14,7 @@ use moodle_url;
 use html_writer;
 use local_coursegoals\Goal;
 use local_coursegoals\Task;
+use local_coursegoals\Section;
 
 class coursegoals_table extends table_sql
 {
@@ -94,7 +95,7 @@ class coursegoals_table extends table_sql
         $icons = [];
 
 
-        if ($data->goal->status != Goal::STATUS_ACTIVE) { // TODO: think of activation and deactivation of goals once again
+        if ($data->goal->status != Goal::STATUS_ACTIVE && count($data->goal->getTasks()) > 0) { // TODO: think of activation and deactivation of goals once again
             $icons[] = $OUTPUT->action_icon('#',
                 new \pix_icon('t/play', get_string(Goal::ACTION_ACTIVATE, 'local_coursegoals'),'core'),
                 null, [
@@ -133,6 +134,7 @@ class coursegoals_table extends table_sql
         $html = '';
         $tasks = $data->goal->getTasks(true);
         foreach ($tasks as $task) {
+            $crule = null;
             $comprule = comprule::getCompruleByID($task->compruleid);
             $class = comprule::makeCompruleClassname($comprule);
             try {
@@ -140,14 +142,21 @@ class coursegoals_table extends table_sql
             } catch (Exception $e) {
                 debugging($e->getMessage(), DEBUG_DEVELOPER);
             }
+            $section = null;
+            if (!empty($task->sectionid)) {
+                $section = new Section($task->sectionid);
+            }
             $implodearr = [];
             $implodearr[] = '<b>'.$task->get_name().'</b>';
             $implodearr[] = $this->getTaskActions($task);
             $label = implode('&ensp;', $implodearr);
 
             $info = [];
-            $info[] = format_string($task->description);
-            if (isset($crule)) {
+            $info[] = get_string('description').': '.
+                $task->description ? format_string($task->description) : get_string('empty');
+            $info[] = get_string('section', 'local_coursegoals').': '.
+                (!empty($section)) ? $section->get_displayedname() : get_string('empty');
+            if (!empty($crule)) {
                 $ruleConditions = $crule->getCompletionConditions($task);
                 if (!empty($ruleConditions)) {
                     $info[] = $ruleConditions;
@@ -284,6 +293,22 @@ class coursegoals_table extends table_sql
             ];
             $this->page->requires->js_call_amd('local_coursegoals/coursegoals', 'setupModals', [
                 $setupModals
+            ]);
+        }
+        // TODO: maybe make a different capability for creating sections
+        if (Goal::userCanManageGoals($this->context)) {
+//            $this->page->requires->js_call_amd('local_coursegoals/coursegoals', 'setupSectionModalForm', [
+//                'elementSelector' => '[data-action="'.Section::ACTION_EDIT.'"][data-sectionid="'.$rowid.'"]',
+//                'formClass' => \local_coursegoals\form\task_edit_form::class,
+//            ]);
+
+            $controls .= html_writer::tag('button', get_string(Section::ACTION_CREATE, 'local_coursegoals'), [
+                'class' => 'm-1 btn btn-primary',
+                'data-action' => Section::ACTION_CREATE,
+            ]);
+            $this->page->requires->js_call_amd('local_coursegoals/coursegoals', 'setupSectionModalForm', [
+                'elementSelector' => '[data-action="'.Section::ACTION_CREATE.'"]',
+                'formClass' => \local_coursegoals\form\section_create_form::class,
             ]);
         }
 

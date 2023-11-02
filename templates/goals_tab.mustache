@@ -19,11 +19,26 @@
                        </div>
                        <div class="col-9">
                            <div class="row">
-                           {{#tasks}}
-                               <div data-taskid="{{taskrefid}}" class="col-sm-auto cg-taskcb">
-                                   {{{taskcompletedoutput}}}
+                           {{#sections}}
+                               <div data-sectionid="{{sectionrefid}}" class="col-sm-auto">
+                                   <div>
+                                       <span>{{displayedname}}</span>
+                                   </div>
+                                   {{#sectiontasks}}
+                                       <div data-taskid="{{taskrefid}}" class="cg-taskcb">
+                                           {{{taskcompletedoutput}}}
+                                       </div>
+                                   {{/sectiontasks}}
                                </div>
-                           {{/tasks}}
+
+                           {{/sections}}
+                           {{^sections}}
+                               {{#tasks}}
+                                   <div data-taskid="{{taskrefid}}" class="col-sm-auto cg-taskcb">
+                                       {{{taskcompletedoutput}}}
+                                   </div>
+                               {{/tasks}}
+                           {{/sections}}
                            </div>
                        </div>
                    </div>

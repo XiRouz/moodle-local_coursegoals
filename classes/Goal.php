@@ -54,7 +54,8 @@ class Goal extends database_object
      * @return Task[]|array tasks of goal as array of instances from DB or Task objects
      * @throws \dml_exception
      */
-    public function getTasks($asClassObjects = false) {
+    public function getTasks($asClassObjects = false)
+    {
         global $DB;
         $instances = $DB->get_records_select(Task::TABLE, 'coursegoalid = :coursegoalid', ['coursegoalid' => $this->id]);
         if ($asClassObjects) {
@@ -68,18 +69,38 @@ class Goal extends database_object
         }
     }
 
-    public function getSectionsAndTasks() {
-//        global $DB;
-//        $instances = $DB->get_records_select(Task::TABLE, 'coursegoalid = :coursegoalid', ['coursegoalid' => $this->id]);
-//        if ($asClassObjects) {
-//            $objects = [];
-//            foreach ($instances as $instance) {
-//                $objects[$instance->id] = new \local_coursegoals\Task($instance->id);
-//            }
-//            return $objects;
-//        } else {
-//            return $instances;
-//        }
+    public function getTasksGroupedInSections() {
+        global $DB;
+        $whereconditions = [];
+        $params['coursegoalid'] = $this->id;
+        $whereconditions[] = "cgt.coursegoalid = :coursegoalid";
+
+        $whereclause = !empty($whereconditions) ? "WHERE (" . implode(" AND ", $whereconditions) . ")" : "";
+        $sql = "
+            SELECT cgt.id as taskid,
+                   cgs.id as sectionid
+            FROM {coursegoals_task} cgt
+            LEFT JOIN {coursegoals_section} cgs ON cgt.sectionid = cgs.id
+            JOIN {coursegoals} cg ON cgt.coursegoalid = cg.id
+            $whereclause
+            ORDER BY cgs.id DESC
+        ";
+        $results = $DB->get_records_sql($sql, $params);
+        $sections = [];
+        foreach ($results as $result) {
+            $section_id = $result->sectionid;
+            if ($section_id == null) {
+                if (!isset($sections['withoutsection'])) {
+                    $sections['withoutsection'] = (object)['name' => '', 'displayedname' => '', 'description' => ''];
+                }
+                $section_id = 'withoutsection';
+            }
+            if (!isset($sections[$section_id])) {
+                $sections[$section_id] = new Section($section_id);
+            }
+            $sections[$section_id]->sectiontasks[] = new Task($result->taskid);
+        }
+        return $sections;
     }
 
     /**

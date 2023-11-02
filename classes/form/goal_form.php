@@ -11,6 +11,8 @@ class goal_form extends \core_form\dynamic_form {
 
     protected function definition()
     {
+        // TODO: make separate forms for all goal actions
+
         $mform = $this->_form;
 
         $action = $this->optional_param('action', null, PARAM_ALPHAEXT);

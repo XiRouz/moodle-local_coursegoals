@@ -33,6 +33,7 @@ function local_coursegoals_before_footer() {
         // if passed all checks, render or create\calculate goal task items for user
         global $PAGE;
 
+        // TODO: make this selector a setting in plugin settings ???
         // course page header - '#page-header'
         // course content div - '.course-content'
 

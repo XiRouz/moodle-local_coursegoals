@@ -13,6 +13,8 @@ class Section extends database_object
     const ACTION_EDIT = 'edit_section';
     const ACTION_DELETE = 'delete_section';
 
+    const SHARED_SECTION_CGID = 0;
+
     public int $coursegoalid;
     public string $name;
     public string $displayedname;
@@ -30,6 +32,44 @@ class Section extends database_object
     {
         parent::__construct($id);
 
+    }
+
+    public static function getSections($coursegoalid = null, $getShared = false) {
+        global $DB;
+        $whereconditions = [];
+        if (!empty($coursegoalid)) {
+            $params['coursegoalid'] = $coursegoalid;
+            $whereconditions[] = "coursegoalid = :coursegoalid";
+        }
+        if ($getShared) {
+            $params['sharedcgid'] = self::SHARED_SECTION_CGID;
+            $whereconditions[] = "coursegoalid = :sharedcgid";
+        }
+        $whereclause = !empty($whereconditions) ? "WHERE (" . implode(" AND ", $whereconditions) . ")" : "";
+        $sql = "
+            SELECT cgs.id
+            FROM {coursegoals_section} cgs
+            $whereclause
+            ORDER BY cgs.id DESC
+        ";
+        $results = $DB->get_records_sql($sql, $params);
+        $objects = [];
+        foreach ($results as $result) {
+            $objects[$result->id] = new self($result->id);
+        }
+        return $objects;
+    }
+
+
+    /**
+     * Returns formatted name of the instance with filters applied
+     * @return string
+     */
+    public function get_displayedname() : string {
+        if (!empty($this->displayedname)) {
+            return format_string($this->name);
+        }
+        return '';
     }
 
     /**

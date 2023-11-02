@@ -88,24 +88,34 @@ export const setupTaskModalForm = (elementSelector, formClass) => {
                 saveButtonText: title,
                 returnFocus: e.target,
             });
-            form.addEventListener(form.events.FORM_SUBMITTED, (event) => {
-                if (event.detail.result) {
-                    if (event.detail.returnaction) {
-                        // todo
-                    }
-                    if (event.detail.redirecturl) {
-                        document.location = event.detail.redirecturl;
-                    } else {
-                        window.location.reload();
-                    }
-                } else {
-                    Notification.addNotification({
-                        type: 'error',
-                        message: event.detail.errors.join('<br>')
-                    });
-                }
+            addDefaultFormSubmitListener(form);
+        })
+    });
+};
+
+export const setupSectionModalForm = (elementSelector, formClass) => {
+    const elements = document.querySelectorAll(elementSelector);
+    elements.forEach((element) => {
+        element.addEventListener('click', function (e) {
+            e.preventDefault();
+            let action = e.target.getAttribute('data-action');
+            let title = this.getAttribute('data-title') || this.innerHTML;
+            let sectionid = this.getAttribute('data-sectionid');
+
+            const form = new ModalForm({
+                formClass,
+                args: {
+                    action: action,
+                    sectionid: sectionid,
+                },
+                modalConfig: {
+                    title: title,
+                    large: true,
+                },
+                saveButtonText: title,
+                returnFocus: e.target,
             });
-            form.show();
+            addDefaultFormSubmitListener(form);
         })
     });
 };
@@ -135,26 +145,29 @@ export const setupModals = (modals) => {
                     saveButtonText: title,
                     returnFocus: e.target,
                 });
-                form.addEventListener(form.events.FORM_SUBMITTED, (event) => {
-                    if (event.detail.result) {
-                        if (event.detail.returnaction) {
-                            // todo
-                        }
-                        if (event.detail.redirecturl) {
-                            document.location = event.detail.redirecturl;
-                        } else {
-                            window.location.reload();
-                        }
-                    } else {
-                        Notification.addNotification({
-                            type: 'error',
-                            message: event.detail.errors.join('<br>')
-                        });
-                    }
-                });
-                form.show();
+                addDefaultFormSubmitListener(form);
             });
         });
     });
 };
 
+const addDefaultFormSubmitListener = (form) => {
+    form.addEventListener(form.events.FORM_SUBMITTED, (event) => {
+        if (event.detail.result) {
+            if (event.detail.returnaction) {
+                // todo
+            }
+            if (event.detail.redirecturl) {
+                document.location = event.detail.redirecturl;
+            } else {
+                window.location.reload();
+            }
+        } else {
+            Notification.addNotification({
+                type: 'error',
+                message: event.detail.errors.join('<br>')
+            });
+        }
+    });
+    form.show();
+};

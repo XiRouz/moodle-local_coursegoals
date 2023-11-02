@@ -11,13 +11,16 @@ defined('MOODLE_INTERNAL') || die();
 $string['pluginname'] = 'Course goals';
 
 // General
-$string['coursegoalid'] = 'Select linked goal';
 $string['compruleid'] = 'Select completion rule';
 $string['coursechoice'] = 'The course goal will be tied to chosen course and its items';
 $string['displayname'] = 'Course goals';
 $string['displayedname'] = 'Displayed name';
 $string['shared'] = 'Shared';
-$string['task'] = 'Task';
+$string['section'] = 'Section';
+$string['section_coursegoalid'] = 'Linked goal';
+$string['section_coursegoalid_select'] = 'Select linked goal';
+$string['sections'] = 'Sections';
+$string['task'] = 'Tasks';
 $string['tasks'] = 'Tasks';
 
 // Actions
@@ -44,7 +47,7 @@ $string['status_stopped'] = 'Stopped';
 
 // Help strings
 $string['formatstring_naming_help'] = 'This field supports format plugins';
-$string['coursegoalid_help'] = 'Linking sections to goal is optional. If link exists, these sections will only pop up when creating tasks for particular goal.
+$string['section_coursegoalid_select_help'] = 'Linking sections to goal is optional. If link exists, these sections will only pop up when creating tasks for particular goal.
 If the section is "shared", it will appear for selection in any task.';
 $string['displayedname_help'] = 'This field supports format plugins. Displayed name will be used for rendering almost anywhere as a short name.';
 

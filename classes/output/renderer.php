@@ -36,37 +36,26 @@ class renderer extends plugin_renderer_base {
                 'goalname' => $goal->get_name(),
                 'goaldescription' => format_string($goal->description),
             ];
-            $tasks = $goal->getTasks(true);
-            foreach ($tasks as $task) {
-                $taskDetailsOutput = '';
-                $taskrow = (object)[
-                    'taskrefid' => $task->id,
-                ];
-                $comprule = comprule::getCompruleByID($task->compruleid);
-                $cruleRenderer = $PAGE->get_renderer("comprules_{$comprule->name}");
-                if (empty($cruleRenderer)) {
-                    $cruleRenderer = $PAGE->get_renderer("local_coursegoals");
-                }
 
-                $taskrecord = $task->getTaskRecordForUser($USER->id);
-                if (!empty($taskrecord)) {
-                    $taskrow->taskcompletedoutput = $cruleRenderer->renderCompletion($task, $taskrecord);
+            $sections = $goal->getTasksGroupedInSections();
+            if (count($sections) == 1 && isset($sections['withoutsection'])) {
+                $tasks = $sections['withoutsection']->sectiontasks;
+                foreach ($tasks as $task) {
+                    $taskrow = $this->prepareTaskRow($task);
+                    $goalrow->tasks[] = $taskrow;
                 }
-                if (plugin_supports('comprules', $comprule->name, helper::FEATURE_CUSTOMTASKDETAILS)) {
-                    try {
-                        $taskDetailsOutput = $cruleRenderer->renderTaskDetails($task);
-                    } catch (Exception $e) {
-                        debugging($e->getMessage(), DEBUG_DEVELOPER);
-                        $taskDetailsOutput = '';
+            } else {
+                foreach ($sections as $section) {
+                    $sectionrow = (object)[
+                        'sectionrefid' => $section->id,
+                        'displayedname' => $section->get_displayedname(),
+                    ];
+                    foreach ($section->sectiontasks as $task) {
+                        $taskrow = $this->prepareTaskRow($task);
+                        $sectionrow->sectiontasks[] = $taskrow;
                     }
                 }
-                if (!empty($taskDetailsOutput)) {
-                    $taskrow->taskdetailshtml = $taskDetailsOutput;
-                } else {
-                    $taskrow->taskdetailshtml = $this->renderTaskDetails($task);
-                }
-
-                $goalrow->tasks[] = $taskrow;
+                $goalrow->sections[] = $sectionrow;
             }
             $data->goals[] = $goalrow;
         }
@@ -94,5 +83,36 @@ class renderer extends plugin_renderer_base {
 
     public function makeCompruleTaskrendererClassname($compruleInstance) {
         return "\\comprules_{$compruleInstance->name}\\output\\renderer";
+    }
+
+    private function prepareTaskRow ($task) {
+        global $PAGE, $USER;
+        $taskrow = (object)['taskrefid' => $task->id];
+        $taskDetailsOutput = '';
+        $comprule = comprule::getCompruleByID($task->compruleid);
+        $cruleRenderer = $PAGE->get_renderer("comprules_{$comprule->name}");
+        if (empty($cruleRenderer)) {
+            $cruleRenderer = $PAGE->get_renderer("local_coursegoals");
+        }
+
+        $taskrecord = $task->getTaskRecordForUser($USER->id);
+        if (!empty($taskrecord)) {
+            $taskrow->taskcompletedoutput = $cruleRenderer->renderCompletion($task, $taskrecord);
+        }
+        if (plugin_supports('comprules', $comprule->name, helper::FEATURE_CUSTOMTASKDETAILS)) {
+            try {
+                $taskDetailsOutput = $cruleRenderer->renderTaskDetails($task);
+            } catch (Exception $e) {
+                debugging($e->getMessage(), DEBUG_DEVELOPER);
+                $taskDetailsOutput = '';
+            }
+        }
+        if (!empty($taskDetailsOutput)) {
+            $taskrow->taskdetailshtml = $taskDetailsOutput;
+        } else {
+            $taskrow->taskdetailshtml = $this->renderTaskDetails($task);
+        }
+
+        return $taskrow;
     }
 }

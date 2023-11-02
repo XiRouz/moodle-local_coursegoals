@@ -16,7 +16,7 @@ class Task extends database_object
 
     public int $coursegoalid;
     public int $compruleid;
-    public int $sectionid;
+    public ?int $sectionid;
     public string $name;
     public ?string $description;
     public ?string $comprule_params;
