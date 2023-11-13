@@ -19,6 +19,7 @@ class Section extends database_object
     public string $name;
     public string $displayedname;
     public ?string $description;
+    public int $sortorder;
     public int $timecreated;
     public ?int $timemodified;
     public int $usercreated;
@@ -34,23 +35,30 @@ class Section extends database_object
 
     }
 
-    public static function getSections($coursegoalid = null, $getShared = false) {
+    /**
+     * @param $coursegoalid
+     * @param $getShared
+     * @return Section[]
+     * @throws \dml_exception
+     */
+    public static function getSections($coursegoalid = null, $getShared = false, $sortorder = SORT_ASC) {
         global $DB;
         $whereconditions = [];
         if (!empty($coursegoalid)) {
             $params['coursegoalid'] = $coursegoalid;
-            $whereconditions[] = "coursegoalid = :coursegoalid";
-        }
-        if ($getShared) {
-            $params['sharedcgid'] = self::SHARED_SECTION_CGID;
-            $whereconditions[] = "coursegoalid = :sharedcgid";
+            $whereconditions[] = "cgs.coursegoalid = :coursegoalid";
         }
         $whereclause = !empty($whereconditions) ? "WHERE (" . implode(" AND ", $whereconditions) . ")" : "";
+        if ($getShared) {
+            $whereclause .= "OR cgs.coursegoalid = :sharedcgid";
+            $params['sharedcgid'] = self::SHARED_SECTION_CGID;
+        }
+        $sort = $sortorder == SORT_ASC ? "ASC" : "DESC";
         $sql = "
             SELECT cgs.id
             FROM {coursegoals_section} cgs
             $whereclause
-            ORDER BY cgs.id DESC
+            ORDER BY cgs.sortorder $sort
         ";
         $results = $DB->get_records_sql($sql, $params);
         $objects = [];
@@ -67,7 +75,7 @@ class Section extends database_object
      */
     public function get_displayedname() : string {
         if (!empty($this->displayedname)) {
-            return format_string($this->name);
+            return format_string($this->displayedname);
         }
         return '';
     }
@@ -93,7 +101,16 @@ class Section extends database_object
 
     public function delete(): bool
     {
-        // TODO: get tasks with current sections and update them with null value in sectionid
+        global $DB;
+        $params = [];
+        $params['sectionid'] = $this->id;
+        $sql = "
+            UPDATE {".Task::TABLE."}
+            SET sectionid = 0
+            WHERE sectionid = :sectionid
+        ";
+        $DB->execute($sql, $params);
+
         $result = $this->_delete();
 
         return $result;
@@ -127,6 +144,7 @@ class Section extends database_object
         return [
             'name',
             'displayedname',
+            'sortorder',
             'timecreated',
             'usercreated',
         ];

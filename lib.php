@@ -15,6 +15,9 @@ function local_coursegoals_before_footer() {
 
     $html = '';
     try {
+        if (! get_config('local_coursegoals', 'enable_viewtab'))
+            return '';
+
         // check if on allowed page
         if (! helper::isOnAllowedPage())
             return '';
@@ -33,16 +36,14 @@ function local_coursegoals_before_footer() {
         // if passed all checks, render or create\calculate goal task items for user
         global $PAGE;
 
-        // TODO: make this selector a setting in plugin settings ???
-        // course page header - '#page-header'
-        // course content div - '.course-content'
-
         if (isloggedin() && !isguestuser()) {
             $output = $PAGE->get_renderer('local_coursegoals');
             $html .= $output->renderGoalsTab();
+            $tabSelector = get_config('local_coursegoals', 'tab_render_header');
+            $order = helper::resolveAppendOrder($tabSelector);
             $PAGE->requires->js_call_amd('local_coursegoals/coursegoals',
                 'initCourseGoalsTab',
-                ['#page-header', 'last']);
+                [$tabSelector, $order]);
         }
 
     } catch (Exception $e) {

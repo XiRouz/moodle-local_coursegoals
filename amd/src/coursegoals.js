@@ -9,6 +9,20 @@ const SELECTORS = {
     TASK_DETAILS_ACTIVE: 'data-td-active',
 };
 
+export const initCourseGoalsTable = () => {
+    let themesInfoDetails = document.querySelectorAll('.taskinfo');
+    document.getElementById('btn_show_tasks_info').addEventListener('click', function(e){
+        themesInfoDetails.forEach(el => {
+            el.open = true;
+        });
+    });
+    document.getElementById('btn_hide_tasks_info').addEventListener('click', function(e){
+        themesInfoDetails.forEach(el => {
+            el.open = false;
+        });
+    });
+};
+
 export const initCourseGoalsTab = (parentelement, appendorder = 'last') => {
     try {
         /* Move the widget to the header area */
@@ -62,6 +76,33 @@ export const initCourseGoalsTab = (parentelement, appendorder = 'last') => {
         });
     }
     catch (ignore) {}
+};
+
+export const setupGoalModalForm = (elementSelector, formClass) => {
+    const elements = document.querySelectorAll(elementSelector);
+    elements.forEach((element) => {
+        element.addEventListener('click', function (e) {
+            e.preventDefault();
+            let action = e.target.getAttribute('data-action');
+            let title = this.getAttribute('data-title') || this.innerHTML;
+            let goalid = this.getAttribute('data-goalid');
+
+            const form = new ModalForm({
+                formClass,
+                args: {
+                    action: action,
+                    goalid: goalid,
+                },
+                modalConfig: {
+                    title: title,
+                    large: true,
+                },
+                saveButtonText: title,
+                returnFocus: e.target,
+            });
+            addDefaultFormSubmitListener(form);
+        })
+    });
 };
 
 export const setupTaskModalForm = (elementSelector, formClass) => {

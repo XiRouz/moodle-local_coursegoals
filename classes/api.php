@@ -68,6 +68,18 @@ class api {
         return [$result, $errors, $redirecturl];
     }
 
+    public static function pauseGoal($data) {
+        $result = false;
+        $errors = [];
+        try {
+            $goal = new Goal($data->id);
+            $result = $goal->pause();
+        } catch (Exception $e) { $errors[] = $e->getMessage(); }
+
+        $redirecturl = self::resolveRedirectURL($data->redirecturl);
+        return [$result, $errors, $redirecturl];
+    }
+
     public static function createSection($data) {
         $result = false;
         $errors = [];

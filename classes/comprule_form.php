@@ -10,7 +10,7 @@ abstract class comprule_form
      * @param $form
      * @return array
      */
-    abstract public static function getFormElementsGroup(&$form);
+    abstract public static function getFormElements(&$form);
 
     /** Validate parameters of form elements for this form
      * @param $params

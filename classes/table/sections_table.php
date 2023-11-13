@@ -13,7 +13,6 @@ use table_sql;
 use moodle_url;
 use html_writer;
 use local_coursegoals\Goal;
-use local_coursegoals\Task;
 use local_coursegoals\Section;
 
 class sections_table extends table_sql
@@ -24,6 +23,8 @@ class sections_table extends table_sql
     /** @var $PAGE object where the table is rendering */
     protected object $page;
 
+    protected $context;
+
     /** Constructor
      * @param $page
      * @param mixed $params Acceptable parameters: context(required), courseid
@@ -32,6 +33,9 @@ class sections_table extends table_sql
     public function __construct($page, $params = null) {
         parent::__construct(self::UNIQUEID);
         $this->page = $page;
+
+        // TODO: remove hardcode
+        $this->context = \context_system::instance();
 
 //        if (empty($params)) {
 //            throw new \coding_exception("Required parameters missing");
@@ -51,10 +55,11 @@ class sections_table extends table_sql
 //        }
 
         $columnheaders = [
-            'coursegoalid' => get_string('section_coursegoalid', 'local_coursegoals'),
             'name' => get_string('name'),
+            'coursegoalid' => get_string('section_coursegoalid', 'local_coursegoals'),
+            'sortorder' => get_string('sortorder', 'local_coursegoals'),
             'displayedname' => get_string('displayedname', 'local_coursegoals'),
-            'description' => get_string('description', 'local_coursegoals'),
+            'description' => get_string('description'),
             'actions' => get_string('actions'),
         ];
 
@@ -68,9 +73,9 @@ class sections_table extends table_sql
 
     public function col_coursegoalid($data) {
         if (!empty($data->coursegoalid)) {
-            $section = new Section($data->coursegoal);
+            $section = new Section($data->coursegoalid);
             return $section->get_displayedname();
-        } else if ($data->coursegoalid === Section::SHARED_SECTION_CGID) {
+        } else if ($data->coursegoalid == strval(Section::SHARED_SECTION_CGID)) {
             return get_string('shared', 'local_coursegoals');
         }
         return '-';
@@ -89,13 +94,39 @@ class sections_table extends table_sql
     }
 
     public function col_actions($data) {
-        // TODO
+        global $OUTPUT;
+        $icons = [];
+
+        // TODO: separate capability for section management?
+        if (Goal::userCanManageGoals($this->context) && $data->section->can_be_updated()) {
+            $icons[] = $OUTPUT->action_icon('#',
+                new \pix_icon('t/edit', get_string('edit'),'core'),
+                null, [
+                    'data-action' => Section::ACTION_EDIT,
+                    'data-sectionid' => $data->id,
+                    'data-title' => get_string(Section::ACTION_EDIT, 'local_coursegoals')
+                ]);
+        }
+
+        if (Goal::userCanManageGoals($this->context) && $data->section->can_be_deleted()) {
+            $icons[] = $OUTPUT->action_icon('#',
+                new \pix_icon('t/delete', get_string('delete'),'core'),
+                null, [
+                    'data-action' => Section::ACTION_DELETE,
+                    'data-sectionid' => $data->id,
+                    'data-title' => get_string(Section::ACTION_DELETE, 'local_coursegoals')
+                ]);
+        }
+
+        $this->setupSectionActionsModals($data->id);
+
+        return \html_writer::span(implode('', $icons),'nowrap');
     }
 
     public function get_sql_sort() {
         $columns = $this->get_sort_columns();
         if (count($columns) == 0) {
-            $columns['coursegoalid'] = SORT_DESC;
+            $columns['sortorder'] = SORT_ASC;
             return self::construct_order_by($columns);
         }
         return parent::get_sql_sort();
@@ -124,7 +155,8 @@ class sections_table extends table_sql
                     cgs.coursegoalid,
                     cgs.name,
                     cgs.displayedname,
-                    cgs.description
+                    cgs.description,
+                    cgs.sortorder
                 FROM {coursegoals_section} cgs
                 {$whereclause} 
         ";
@@ -163,7 +195,7 @@ class sections_table extends table_sql
         }
 
         foreach ($this->rawdata as &$row) {
-            // do something with data if needed
+            $row->section = new Section($row->id);
         }
 
         // Set initial bars.
@@ -189,25 +221,16 @@ class sections_table extends table_sql
         global $OUTPUT;
         $html = '';
         $controls = '';
-//
-//        // TODO: maybe make a different capability for creating sections
-//        if (Goal::userCanManageGoals($this->context)) {
-////            $this->page->requires->js_call_amd('local_coursegoals/coursegoals', 'setupSectionModalForm', [
-////                'elementSelector' => '[data-action="'.Section::ACTION_EDIT.'"][data-sectionid="'.$rowid.'"]',
-////                'formClass' => \local_coursegoals\form\task_edit_form::class,
-////            ]);
-//
-//            $controls .= html_writer::tag('button', get_string(Section::ACTION_CREATE, 'local_coursegoals'), [
-//                'class' => 'm-1 btn btn-primary',
-//                'data-action' => Section::ACTION_CREATE,
-//            ]);
-//            $this->page->requires->js_call_amd('local_coursegoals/coursegoals', 'setupSectionModalForm', [
-//                'elementSelector' => '[data-action="'.Section::ACTION_CREATE.'"]',
-//                'formClass' => \local_coursegoals\form\section_create_form::class,
-//            ]);
-//        }
-//
-//        $html .= html_writer::div($controls, 'controls'); // end controls
+
+        // TODO: maybe make a different capability for creating sections
+        if (Goal::userCanManageGoals($this->context)) {
+            $controls .= html_writer::tag('button', get_string(Section::ACTION_CREATE, 'local_coursegoals'), [
+                'class' => 'm-1 btn btn-primary',
+                'data-action' => Section::ACTION_CREATE,
+            ]);
+            $this->setupAddNewSectionModal();
+        }
+        $html .= html_writer::div($controls, 'controls');
         echo $html;
     }
 
@@ -239,5 +262,24 @@ class sections_table extends table_sql
      */
     protected function renderWrapperEnd() {
         echo html_writer::end_div();
+    }
+
+    protected function setupAddNewSectionModal() {
+        $this->page->requires->js_call_amd('local_coursegoals/coursegoals', 'setupSectionModalForm', [
+            'elementSelector' => '[data-action="'.Section::ACTION_CREATE.'"]',
+            'formClass' => \local_coursegoals\form\section_create_form::class,
+        ]);
+    }
+
+    protected function setupSectionActionsModals($rowid) {
+        $this->page->requires->js_call_amd('local_coursegoals/coursegoals', 'setupSectionModalForm', [
+            'elementSelector' => '[data-action="'.Section::ACTION_EDIT.'"][data-sectionid="'.$rowid.'"]',
+            'formClass' => \local_coursegoals\form\section_edit_form::class,
+        ]);
+
+        $this->page->requires->js_call_amd('local_coursegoals/coursegoals', 'setupSectionModalForm', [
+            'elementSelector' => '[data-action="'.Section::ACTION_DELETE.'"][data-sectionid="'.$rowid.'"]',
+            'formClass' => \local_coursegoals\form\section_edit_form::class,
+        ]);
     }
 }

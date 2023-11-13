@@ -75,6 +75,10 @@ class Task extends database_object
     }
 
     public function calculateCompletionForUser($userid) {
+        $goal = new Goal($this->coursegoalid);
+        if (! $goal->isActive()) {
+            return false;
+        }
         $comprule = comprule::getCompruleByID($this->compruleid);
         $class = comprule::makeCompruleClassname($comprule);
         $completed = null;

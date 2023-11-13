@@ -13,11 +13,11 @@ class Goal extends database_object
     const ACTION_EDIT = 'edit_goal';
     const ACTION_DELETE = 'delete_goal';
     const ACTION_ACTIVATE = 'activate_goal';
-    const ACTION_STOP = 'stop_goal';
+    const ACTION_PAUSE = 'pause_goal';
 
     const STATUS_INACTIVE = 0;
     const STATUS_ACTIVE = 1;
-    const STATUS_STOPPED = -1;
+    const STATUS_PAUSED = -1;
 
     public int $courseid;
     public int $status;
@@ -37,7 +37,6 @@ class Goal extends database_object
     public function __construct(int $id)
     {
         parent::__construct($id);
-
     }
 
     public function activate() {
@@ -47,6 +46,19 @@ class Goal extends database_object
         $data = new stdClass();
         $data->status = self::STATUS_ACTIVE;
         return $this->update($data);
+    }
+
+    public function pause() {
+        if ($this->status != self::STATUS_ACTIVE) {
+            return false;
+        }
+        $data = new stdClass();
+        $data->status = self::STATUS_PAUSED;
+        return $this->update($data);
+    }
+
+    public function isActive() {
+        return $this->status == self::STATUS_ACTIVE;
     }
 
     /**
@@ -83,22 +95,26 @@ class Goal extends database_object
             LEFT JOIN {coursegoals_section} cgs ON cgt.sectionid = cgs.id
             JOIN {coursegoals} cg ON cgt.coursegoalid = cg.id
             $whereclause
-            ORDER BY cgs.id DESC
+            ORDER BY cgs.sortorder ASC
         ";
         $results = $DB->get_records_sql($sql, $params);
         $sections = [];
+        $nosectiontasks = [];
         foreach ($results as $result) {
             $section_id = $result->sectionid;
             if ($section_id == null) {
-                if (!isset($sections['withoutsection'])) {
-                    $sections['withoutsection'] = (object)['name' => '', 'displayedname' => '', 'description' => ''];
-                }
-                $section_id = 'withoutsection';
+                $nosectiontasks[] = new Task($result->taskid);
+                continue;
             }
             if (!isset($sections[$section_id])) {
                 $sections[$section_id] = new Section($section_id);
             }
             $sections[$section_id]->sectiontasks[] = new Task($result->taskid);
+        }
+        // putting tasks without section to end of array
+        if (!empty($nosectiontasks)) {
+            $sections['withoutsection'] = (object)['id'=> '', 'name' => ' ', 'displayedname' => '&#x200b;', 'description' => ''];
+            $sections['withoutsection']->sectiontasks = $nosectiontasks;
         }
         return $sections;
     }
@@ -116,7 +132,7 @@ class Goal extends database_object
         if (is_null($goalStatus)) {
             $goalStatus = Goal::STATUS_ACTIVE;
         }
-
+        $params = [];
         $whereconditions = [];
         if (!empty($courseid)) {
             $params['courseid'] = $courseid;
@@ -157,7 +173,7 @@ class Goal extends database_object
     public static function recalculateTaskCompletionsForUser($userid, $courseid = null) {
         global $DB;
         if (is_null($courseid)) {
-            // TODO: make a function or query for all available (by course) goals. Recalcs for all goals can be quite long
+            // TODO: make a function or query for all available (by course) goals OR for all users in course. Recalcs for all goals can be quite long
         } else {
             $goals = self::getGoals($courseid);
             foreach ($goals as $goal) {

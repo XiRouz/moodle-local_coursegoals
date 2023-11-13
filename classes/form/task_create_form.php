@@ -5,6 +5,7 @@ namespace local_coursegoals\form;
 use context;
 use core\check\performance\debugging;
 use Exception;
+use local_coursegoals\Section;
 use moodle_url;
 use local_coursegoals\Task;
 use local_coursegoals\api;
@@ -36,6 +37,17 @@ class task_create_form extends \core_form\dynamic_form {
         $mform->addHelpButton('description', 'formatstring_naming', 'local_coursegoals');
         $mform->setType('description', PARAM_TEXT);
 
+        $cgid = $this->optional_param('coursegoalid', null, PARAM_INT);
+        $sections = Section::getSections($cgid, true);
+        $sectionOptions = [0 => get_string('withoutsection', 'local_coursegoals')];
+        foreach ($sections as $id => $section) {
+            $sectionOptions[$id] = $section->get_displayedname();
+        }
+        $mform->addElement('select', 'sectionid', get_string('select_sectionid', 'local_coursegoals'), $sectionOptions);
+        $mform->addHelpButton('sectionid', 'sections_explained', 'local_coursegoals');
+        $mform->setType('sectionid', PARAM_INT);
+        $mform->setDefault('sectionid', 0);
+
         $comprules = comprule::getComprules();
         $comprulesOptions = [0 => get_string('choosedots')];
         foreach ($comprules as $id => $rule) {
@@ -45,18 +57,30 @@ class task_create_form extends \core_form\dynamic_form {
 //           $mform->addHelpButton('compruleid', 'compruleid', 'local_coursegoals');
         $mform->setType('compruleid', PARAM_INT);
         $mform->setDefault('compruleid', 0);
+
+        // cant hide static elements :(
+//        $mform->addElement('static', 'crule_params', get_string('crule_params', 'local_coursegoals'));
+//        $mform->hideIf('crule_params', 'compruleid', 'neq', 0);
+        $cruleLabelGroup = [];
+        $cruleLabelGroup[] = $mform->createElement('static', 'crule_params', '');
+        $mform->addGroup($cruleLabelGroup, 'crlabelgroup',
+            get_string('crule_params', 'local_coursegoals'), ' ', false);
+        $mform->hideIf('crlabelgroup', 'compruleid', 'eq', 0);
+
         foreach ($comprules as $id => $comprule) {
             $class = comprule_form::makeCompruleFormClassname($comprule);
             try {
                 $ruleFormObj = new $class();
-                $mformgroup = $ruleFormObj::getFormElementsGroup($mform);
-                if (!empty($mformgroup)) {
-                    $mform->addGroup($mformgroup, "crgr_{$comprule->name}", 'CRule parameters', /*null, false*/);
-                    $mform->setType("crgr_{$comprule->name}", PARAM_RAW);
-                    $mform->hideIf("crgr_{$comprule->name}", 'compruleid', 'neq', $id);
+                $mformgroups = $ruleFormObj::getFormElements($mform);
+                if (!empty($mformgroups)) {
+                    foreach ($mformgroups as $mformgroup) {
+                        $mform->addGroup($mformgroup, "crgr_{$comprule->name}", end($mformgroup)->_label, '<br />', /*false*/);
+                        $mform->setType("crgr_{$comprule->name}", PARAM_RAW);
+                        $mform->hideIf("crgr_{$comprule->name}", 'compruleid', 'neq', $id);
 
-                    if (plugin_supports('comprules', $comprule->name, helper::FEATURE_CUSTOMVIEW)) {
-                        // TODO: form elements for custom view if needed
+                        if (plugin_supports('comprules', $comprule->name, helper::FEATURE_CUSTOMVIEW)) {
+                            // TODO: form elements for custom view if needed
+                        }
                     }
                 }
             } catch (Exception $e) {

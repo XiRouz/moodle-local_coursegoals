@@ -18,14 +18,17 @@ $PAGE->set_context($context);
 $PAGE->set_title(get_string('displayname', 'local_coursegoals'));
 $PAGE->set_heading(get_string('displayname', 'local_coursegoals'));
 $PAGE->set_url(new moodle_url($FULLME));
-$PAGE->set_pagelayout('course');
-//$PAGE->set_pagetype('course-view-' . $course->format); //TODO
 
 $params = ['context' => $context, 'courseid' => $course ?? null];
 $table = \local_coursegoals\table\coursegoals_table::create($PAGE, $params);
 
 echo $OUTPUT->header();
 echo $OUTPUT->spacer([], true);
+
+// TODO: create and add navigation nodes?
+$sections_url = new moodle_url('/local/coursegoals/sections.php');
+echo html_writer::link($sections_url, get_string('sections', 'local_coursegoals'), ['class' => 'm-1 btn btn-secondary']);
+echo '<br/><br/>';
 
 $table->render(true);
 

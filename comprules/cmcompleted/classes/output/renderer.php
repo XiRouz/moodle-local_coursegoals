@@ -30,17 +30,26 @@ class renderer extends \local_coursegoals\output\renderer
             if (!empty($gradesinfo) && !empty($gradesinfo->items)) {
                 foreach ($gradesinfo->items as $item) {
                     if ($item->scaleid !== null) { // scaleid is null for grade items of GRADE_TYPE_NONE
-                        if (!empty($item->gradepass)) {
+                        if (!empty($item->gradepass)) { // TODO: setting in task whether to show gradepass or not
                             $data->gradepass = round($item->gradepass, 2);
                         }
                         if (!empty($item->grades)) {
                             $grade = end($item->grades);
                             $data->yourgrade = round($grade->grade, 2);
-                        } else {
-                            $data->yourgrade = '-';
+                        }
+                        if (empty($data->yourgrade)) {
+                            $data->yourgrade = get_string('notapplicable', 'comprules_cmcompleted');
                         }
                     }
                 }
+            }
+            if (!isset($data->yourgrade)) {
+                $completion = new \completion_info($cminfo->get_course());
+                $completiondata = $completion->get_data($cminfo, false, $USER->id);
+                $completionResult = cmcompleted_comprule::convertCompletionFromCompData($completiondata);
+                $checkmark = '&#9989;';
+                $redcross = '&#10060;';
+                $data->completed = $completionResult > 0 ? $checkmark : $redcross;
             }
             return $this->render_from_template('comprules_cmcompleted/task_details', $data);
         } else {
@@ -66,6 +75,6 @@ class renderer extends \local_coursegoals\output\renderer
                 $pix_id = 'cb-fail';
                 break;
         }
-        return $OUTPUT->pix_icon($pix_id, $alt, $pluginname);
+        return $OUTPUT->pix_icon($pix_id, $alt, $pluginname, ['class' => 'mr-0']);
     }
 }

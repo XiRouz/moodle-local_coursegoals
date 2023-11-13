@@ -9,4 +9,10 @@ $observers = [
         'priority'  => 1,
         'internal'  => true
     ],
+    [
+        'eventname'   => '\core\event\course_module_completion_updated',
+        'callback'    => '\comprules_cmcompleted\observer::course_module_completion_updated',
+        'priority'  => 1,
+        'internal'  => true
+    ],
 ];
