@@ -53,6 +53,7 @@
         <FIELD NAME="name" SEQUENCE="false" TYPE="char" LENGTH="255" NOTNULL="true"/>
         <FIELD NAME="displayedname" SEQUENCE="false" TYPE="text" NOTNULL="true" COMMENT="Short version of name for displaying it where needed"/>
         <FIELD NAME="description" SEQUENCE="false" TYPE="text" NOTNULL="false"/>
+        <FIELD NAME="sortorder" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="timecreated" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="timemodified" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="false"/>
         <FIELD NAME="usercreated" SEQUENCE="false" TYPE="int" LENGTH="10" NOTNULL="true"/>

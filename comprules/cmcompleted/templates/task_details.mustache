@@ -13,5 +13,10 @@
     {{#gradepass}}
         <p class="mb-0">{{#str}}gradepass, comprules_cmcompleted{{/str}}: {{gradepass}}</p>
     {{/gradepass}}
-    <p class="mb-0">{{#str}}yourgrade, comprules_cmcompleted{{/str}}: {{yourgrade}}</p>
+    {{#yourgrade}}
+        <p class="mb-0">{{#str}}yourgrade, comprules_cmcompleted{{/str}}: {{yourgrade}}</p>
+    {{/yourgrade}}
+    {{#completed}}
+        <p class="mb-0">{{#str}}completed, comprules_cmcompleted{{/str}}: {{completed}}</p>
+    {{/completed}}
 </div>

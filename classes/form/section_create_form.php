@@ -38,8 +38,14 @@ class section_create_form extends \core_form\dynamic_form {
         $mform->addHelpButton('description', 'formatstring_naming', 'local_coursegoals');
         $mform->setType('description', PARAM_TEXT);
 
+        $mform->addElement('text', 'sortorder', get_string('sortorder', 'local_coursegoals'));
+        $mform->addHelpButton('sortorder', 'sortorder', 'local_coursegoals');
+        $mform->setType('sortorder', PARAM_INT);
+        $mform->setDefault('sortorder', 1);
+        $mform->addRule('sortorder', null, 'required');
+
         $coursegoalOptions = [0 => get_string('shared', 'local_coursegoals')];
-        $goals = Goal::getGoals();
+        $goals = Goal::getGoals(null, []);
         foreach ($goals as $id => $goal) {
             $coursegoalOptions[$id] = $goal->get_name();
         }

@@ -47,31 +47,18 @@ class cmcompleted_comprule extends \local_coursegoals\comprule
         $cminfo = \cm_info::create((object)['id' => $params['cmid'], 'course' => $courseid]);
         $completion = new \completion_info($cminfo->get_course());
         $completiondata = $completion->get_data($cminfo, false, $userid);
+        return self::convertCompletionFromcompData($completiondata);
+    }
 
-
-        if ($completiondata->completionstate == COMPLETION_COMPLETE_PASS) {
+    public static function convertCompletionFromCompData($completiondata) {
+        if ($completiondata->completionstate == COMPLETION_COMPLETE
+            || $completiondata->completionstate == COMPLETION_COMPLETE_PASS) {
             return self::COMPLETION_DONE;
         } else if ($completiondata->completionstate == COMPLETION_INCOMPLETE) {
             return self::COMPLETION_EMPTY;
         } else if ($completiondata->completionstate == COMPLETION_COMPLETE_FAIL) {
             return self::COMPLETION_WARNING;
         } else {
-//            $gradesinfo = grade_get_grades($courseid, 'mod', $cminfo->modname, $cminfo->instance, $USER->id);
-//            if (!empty($gradesinfo) && !empty($gradesinfo->items)) {
-//                foreach ($gradesinfo->items as $item) {
-//                    if ($item->scaleid !== null) { // scaleid is null for grade items of GRADE_TYPE_NONE
-//                        if (!empty($item->gradepass)) {
-//                            $data->gradepass = round($item->gradepass, 2);
-//                        }
-//                        if (!empty($item->grades)) {
-//                            $grade = end($item->grades);
-//                            $data->yourgrade = round($grade->grade, 2);
-//                        } else {
-//                            $data->yourgrade = '-';
-//                        }
-//                    }
-//                }
-//            }
             return self::COMPLETION_EMPTY;
         }
     }

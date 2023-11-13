@@ -6,6 +6,7 @@ use plugin_renderer_base;
 use stdClass;
 use Exception;
 use local_coursegoals\Goal;
+use local_coursegoals\Section;
 use local_coursegoals\comprule;
 use local_coursegoals\helper;
 
@@ -46,16 +47,17 @@ class renderer extends plugin_renderer_base {
                 }
             } else {
                 foreach ($sections as $section) {
+                    $displayedname = $section instanceof Section ? $section->get_displayedname() : $section->displayedname;
                     $sectionrow = (object)[
                         'sectionrefid' => $section->id,
-                        'displayedname' => $section->get_displayedname(),
+                        'displayedname' => $displayedname,
                     ];
                     foreach ($section->sectiontasks as $task) {
                         $taskrow = $this->prepareTaskRow($task);
                         $sectionrow->sectiontasks[] = $taskrow;
                     }
+                    $goalrow->sections[] = $sectionrow;
                 }
-                $goalrow->sections[] = $sectionrow;
             }
             $data->goals[] = $goalrow;
         }
@@ -78,7 +80,7 @@ class renderer extends plugin_renderer_base {
         // $redcross = '&#10060;';
         $alt = $task->get_name();
         $pix_id = $taskrecord->completed ? 'cb-complete' : 'cb-empty';
-        return $OUTPUT->pix_icon($pix_id, $alt, 'local_coursegoals');
+        return $OUTPUT->pix_icon($pix_id, $alt, 'local_coursegoals', ['class' => 'mr-0']);
     }
 
     public function makeCompruleTaskrendererClassname($compruleInstance) {

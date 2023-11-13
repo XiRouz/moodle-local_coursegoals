@@ -8,6 +8,7 @@ use local_coursegoals\Task;
 
 require_once($CFG->dirroot.'/grade/querylib.php');
 require_once($CFG->dirroot.'/lib/grade/constants.php');
+require_once($CFG->libdir.'/completionlib.php');
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -17,9 +18,9 @@ class cmcompleted_form extends \local_coursegoals\comprule_form
      * @param $mform
      * @return array
      */
-    public static function getFormElementsGroup(&$mform)
+    public static function getFormElements(&$mform)
     {
-        $group = [];
+        $cmgroup = [];
         $goalid = $mform->optional_param('coursegoalid', null, PARAM_INT);
         if (!empty($goalid)) {
             $goal = new Goal($goalid);
@@ -34,10 +35,13 @@ class cmcompleted_form extends \local_coursegoals\comprule_form
 
         $cmOptions = [0 => get_string('choosedots')] + self::getCMs($goal->courseid);
 
-        $group[] = $mform->createElement('select', 'cmid',
+        $cmgroup[] = $mform->createElement('select', 'cmid',
             get_string('cmid', 'comprules_cmcompleted'), $cmOptions);
         // add help button?
-        return $group;
+
+//        $dummygroup[] = $mform->createElement('text', 'dummy123', '123', '456');
+
+        return [$cmgroup];
     }
 
     /** Validate parameters of form elements for this form
@@ -54,8 +58,12 @@ class cmcompleted_form extends \local_coursegoals\comprule_form
     }
 
     public static function getCMs($courseid) {
+        global $DB;
         $cmOptions = [];
-        $cms = \grade_get_gradable_activities($courseid);
+//        $cms = \grade_get_gradable_activities($courseid);
+        $course = $DB->get_record('course', array('id'=>$courseid));
+        $completion = new \completion_info($course);
+        $cms = $completion->get_activities();
         if (!empty($cms)) {
             foreach ($cms as $id => $cm) {
                 $cmOptions[$id] = format_string($cm->name);

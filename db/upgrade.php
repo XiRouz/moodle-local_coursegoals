@@ -19,10 +19,17 @@ function xmldb_local_coursegoals_upgrade($oldversion) {
 
     $dbman = $DB->get_manager();
 
-//    $newversion = 2023100900;
-//    if ($oldversion < $newversion) {
-//        upgrade_plugin_savepoint(true, $newversion, 'local', 'coursegoals');
-//    }
+    $newversion = 2023110700;
+    if ($oldversion < $newversion) {
+        $table = new xmldb_table('coursegoals_section');
+        $field = new xmldb_field('sortorder', XMLDB_TYPE_INTEGER, 10, null, XMLDB_NOTNULL, null, 0);
+
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        upgrade_plugin_savepoint(true, $newversion, 'local', 'coursegoals');
+    }
 
 
     return true;

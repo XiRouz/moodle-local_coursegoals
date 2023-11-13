@@ -84,8 +84,8 @@ class coursegoals_table extends table_sql
             case Goal::STATUS_ACTIVE:
                 return get_string('status_active', 'local_coursegoals');
                 break;
-            case Goal::STATUS_STOPPED:
-                return get_string('status_stopped', 'local_coursegoals');
+            case Goal::STATUS_PAUSED:
+                return get_string('status_paused', 'local_coursegoals');
                 break;
         }
     }
@@ -94,14 +94,23 @@ class coursegoals_table extends table_sql
         global $OUTPUT;
         $icons = [];
 
-
-        if ($data->goal->status != Goal::STATUS_ACTIVE && count($data->goal->getTasks()) > 0) { // TODO: think of activation and deactivation of goals once again
+        if (!$data->goal->isActive() && count($data->goal->getTasks()) > 0) {
             $icons[] = $OUTPUT->action_icon('#',
                 new \pix_icon('t/play', get_string(Goal::ACTION_ACTIVATE, 'local_coursegoals'),'core'),
                 null, [
                     'data-action' => Goal::ACTION_ACTIVATE,
-                    'data-id' => $data->id,
+                    'data-goalid' => $data->id,
                     'data-title' => get_string(Goal::ACTION_ACTIVATE, 'local_coursegoals')
+                ]);
+        }
+
+        if ($data->goal->isActive() && count($data->goal->getTasks()) > 0) {
+            $icons[] = $OUTPUT->action_icon('#',
+                new \pix_icon('i/enrolmentsuspended', get_string(Goal::ACTION_PAUSE, 'local_coursegoals'),'core'),
+                null, [
+                    'data-action' => Goal::ACTION_PAUSE,
+                    'data-goalid' => $data->id,
+                    'data-title' => get_string(Goal::ACTION_PAUSE, 'local_coursegoals')
                 ]);
         }
 
@@ -110,7 +119,7 @@ class coursegoals_table extends table_sql
                 new \pix_icon('t/edit', get_string('edit'),'core'),
                 null, [
                     'data-action' => Goal::ACTION_EDIT,
-                    'data-id' => $data->id,
+                    'data-goalid' => $data->id,
                     'data-title' => get_string(Goal::ACTION_EDIT, 'local_coursegoals')
                 ]);
         }
@@ -120,7 +129,7 @@ class coursegoals_table extends table_sql
                 new \pix_icon('t/delete', get_string('delete'),'core'),
                 null, [
                     'data-action' => Goal::ACTION_DELETE,
-                    'data-id' => $data->id,
+                    'data-goalid' => $data->id,
                     'data-title' => get_string(Goal::ACTION_DELETE, 'local_coursegoals')
                 ]);
         }
@@ -152,10 +161,12 @@ class coursegoals_table extends table_sql
             $label = implode('&ensp;', $implodearr);
 
             $info = [];
-            $info[] = get_string('description').': '.
-                $task->description ? format_string($task->description) : get_string('empty');
-            $info[] = get_string('section', 'local_coursegoals').': '.
-                (!empty($section)) ? $section->get_displayedname() : get_string('empty');
+            $descrString = get_string('description') . ': ';
+            $descrString .= $task->description ? format_string($task->description) : '';
+            $info[] = $descrString;
+            $sectionString = get_string('section', 'local_coursegoals').': ';
+            $sectionString .= !empty($section) ? $section->get_displayedname() : get_string('withoutsection', 'local_coursegoals');
+            $info[] = $sectionString;
             if (!empty($crule)) {
                 $ruleConditions = $crule->getCompletionConditions($task);
                 if (!empty($ruleConditions)) {
@@ -286,22 +297,13 @@ class coursegoals_table extends table_sql
                 'class' => 'm-1 btn btn-primary',
                 'data-action' => Goal::ACTION_CREATE,
             ]);
-            $setupModals = [];
-            $setupModals[] = [
+            $this->page->requires->js_call_amd('local_coursegoals/coursegoals', 'setupGoalModalForm', [
                 'elementSelector' => '[data-action="'.Goal::ACTION_CREATE.'"]',
-                'formClass' => \local_coursegoals\form\goal_form::class,
-            ];
-            $this->page->requires->js_call_amd('local_coursegoals/coursegoals', 'setupModals', [
-                $setupModals
+                'formClass' => \local_coursegoals\form\goal_create_form::class,
             ]);
         }
         // TODO: maybe make a different capability for creating sections
         if (Goal::userCanManageGoals($this->context)) {
-//            $this->page->requires->js_call_amd('local_coursegoals/coursegoals', 'setupSectionModalForm', [
-//                'elementSelector' => '[data-action="'.Section::ACTION_EDIT.'"][data-sectionid="'.$rowid.'"]',
-//                'formClass' => \local_coursegoals\form\task_edit_form::class,
-//            ]);
-
             $controls .= html_writer::tag('button', get_string(Section::ACTION_CREATE, 'local_coursegoals'), [
                 'class' => 'm-1 btn btn-primary',
                 'data-action' => Section::ACTION_CREATE,
@@ -311,6 +313,11 @@ class coursegoals_table extends table_sql
                 'formClass' => \local_coursegoals\form\section_create_form::class,
             ]);
         }
+
+        $controls .= html_writer::tag('button', get_string('show_tasks_info', 'local_coursegoals'),
+            ['class' => 'm-1 btn btn-warning', 'id' => 'btn_show_tasks_info']);
+        $controls .= html_writer::tag('button', get_string('hide_tasks_info', 'local_coursegoals'),
+            ['class' => 'm-1 btn btn-warning', 'id' => 'btn_hide_tasks_info']);
 
         $html .= html_writer::div($controls, 'controls'); // end controls
         echo $html;
@@ -323,6 +330,7 @@ class coursegoals_table extends table_sql
         $this->renderWrapperStart();
         $this->out(0, true);
         $this->renderWrapperEnd();
+        $this->callJsInit();
     }
 
     /**
@@ -390,20 +398,22 @@ class coursegoals_table extends table_sql
     }
 
     protected function setupGoalActionsModals($rowid) {
-        $setupModals = [];
-        $setupModals[] = [
-            'elementSelector' => '[data-action="'.Goal::ACTION_ACTIVATE.'"][data-id="'.$rowid.'"]',
-            'formClass' => \local_coursegoals\form\goal_form::class,
-        ];
-        $setupModals[] = [
-            'elementSelector' => '[data-action="'.Goal::ACTION_EDIT.'"][data-id="'.$rowid.'"]',
-            'formClass' => \local_coursegoals\form\goal_form::class,
-        ];
-        $setupModals[] = [
-            'elementSelector' => '[data-action="'.Goal::ACTION_DELETE.'"][data-id="'.$rowid.'"]',
-            'formClass' => \local_coursegoals\form\goal_form::class,
-        ];
-        $this->page->requires->js_call_amd('local_coursegoals/coursegoals', 'setupModals', [$setupModals]);
+        $this->page->requires->js_call_amd('local_coursegoals/coursegoals', 'setupGoalModalForm', [
+            'elementSelector' => '[data-action="'.Goal::ACTION_ACTIVATE.'"][data-goalid="'.$rowid.'"]',
+            'formClass' => \local_coursegoals\form\goal_activate_form::class,
+        ]);
+        $this->page->requires->js_call_amd('local_coursegoals/coursegoals', 'setupGoalModalForm', [
+            'elementSelector' => '[data-action="'.Goal::ACTION_PAUSE.'"][data-goalid="'.$rowid.'"]',
+            'formClass' => \local_coursegoals\form\goal_pause_form::class,
+        ]);
+        $this->page->requires->js_call_amd('local_coursegoals/coursegoals', 'setupGoalModalForm', [
+            'elementSelector' => '[data-action="'.Goal::ACTION_EDIT.'"][data-goalid="'.$rowid.'"]',
+            'formClass' => \local_coursegoals\form\goal_edit_form::class,
+        ]);
+        $this->page->requires->js_call_amd('local_coursegoals/coursegoals', 'setupGoalModalForm', [
+            'elementSelector' => '[data-action="'.Goal::ACTION_DELETE.'"][data-goalid="'.$rowid.'"]',
+            'formClass' => \local_coursegoals\form\goal_delete_form::class,
+        ]);
     }
 
     protected function setupTaskActionsModals($rowid) {
@@ -423,6 +433,10 @@ class coursegoals_table extends table_sql
             'elementSelector' => '[data-action="'.Task::ACTION_CREATE.'"][data-coursegoalid="'.$goalid.'"]',
             'formClass' => \local_coursegoals\form\task_create_form::class,
         ]);
+    }
+
+    protected function callJsInit() {
+        $this->page->requires->js_call_amd('local_coursegoals/coursegoals', 'initCourseGoalsTable');
     }
 
 }

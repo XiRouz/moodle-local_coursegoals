@@ -3,59 +3,30 @@
 namespace local_coursegoals\form;
 
 use context;
-use core\check\performance\debugging;
-use Exception;
-use local_coursegoals\Goal;
-use local_coursegoals\Section;
 use moodle_url;
-use local_coursegoals\Task;
+use local_coursegoals\Goal;
 use local_coursegoals\api;
-use local_coursegoals\comprule;
-use local_coursegoals\comprule_form;
-use local_coursegoals\helper;
 
-class section_edit_form extends \core_form\dynamic_form {
+class goal_activate_form extends \core_form\dynamic_form {
 
     protected function definition()
     {
         $mform = $this->_form;
 
-        $mform->addElement('hidden', 'action');
-        $mform->setType('action', PARAM_ALPHAEXT);
-
         $mform->addElement('hidden', 'id');
         $mform->setType('id', PARAM_INT);
 
-        $mform->addElement('static', 'sections_explained', '', get_string('sections_explained', 'local_coursegoals'));
-        $mform->setType('sections_explained', PARAM_TEXT);
+        $mform->addElement('hidden', 'action');
+        $mform->setType('action', PARAM_ALPHAEXT);
 
-        $mform->addElement('text', 'name', get_string('name'));
-        $mform->addHelpButton('name', 'formatstring_naming', 'local_coursegoals');
+        $mform->addElement('static', 'name', get_string('name'));
         $mform->setType('name', PARAM_TEXT);
-        $mform->addRule('name', null, 'required');
 
-        $mform->addElement('text', 'displayedname', get_string('displayedname', 'local_coursegoals'));
-        $mform->addHelpButton('displayedname', 'displayedname', 'local_coursegoals');
-        $mform->setType('displayedname', PARAM_TEXT);
-        $mform->addRule('displayedname', null, 'required');
-
-        $mform->addElement('textarea', 'description', get_string('description'));
-        $mform->addHelpButton('description', 'formatstring_naming', 'local_coursegoals');
+        $mform->addElement('static', 'description', get_string('description'));
         $mform->setType('description', PARAM_TEXT);
 
-        $mform->addElement('text', 'sortorder', get_string('sortorder', 'local_coursegoals'));
-        $mform->addHelpButton('sortorder', 'sortorder', 'local_coursegoals');
-        $mform->setType('sortorder', PARAM_INT);
-        $mform->addRule('sortorder', null, 'required');
-
-        $coursegoalOptions = [0 => get_string('shared', 'local_coursegoals')];
-        $goals = Goal::getGoals();
-        foreach ($goals as $id => $goal) {
-            $coursegoalOptions[$id] = $goal->get_name();
-        }
-        $mform->addElement('select', 'coursegoalid', get_string('section_coursegoalid_select', 'local_coursegoals'), $coursegoalOptions);
-        $mform->addHelpButton('coursegoalid', 'section_coursegoalid_select', 'local_coursegoals');
-        $mform->setType('coursegoalid', PARAM_INT);
+        $mform->addElement('static', 'confirm', '', get_string(Goal::ACTION_ACTIVATE.'_explained', 'local_coursegoals'));
+        $mform->setType('confirm', PARAM_TEXT);
     }
 
     /**
@@ -67,12 +38,13 @@ class section_edit_form extends \core_form\dynamic_form {
      */
     public function validation($data, $files) {
         $errors = [];
+
         return $errors;
     }
 
     public function process_dynamic_submission() {
         $data = $this->get_data();
-        list($result, $errors, $redirecturl) = api::editSection($data);
+        list($result, $errors, $redirecturl) = api::activateGoal($data);
         return [
             'result' => $result,
             'errors' => $errors,
@@ -89,15 +61,13 @@ class section_edit_form extends \core_form\dynamic_form {
     public function set_data_for_dynamic_submission(): void {
         $data = [];
         $data['action'] = $this->optional_param('action', null, PARAM_ALPHAEXT);
-        $id = $this->optional_param('sectionid', null, PARAM_INT);
+        $id = $this->optional_param('goalid', null, PARAM_INT);
         if ($id) {
-            $section = new Section($id);
-            $data['id'] = $section->id;
-            $data['coursegoalid'] = $section->coursegoalid;
-            $data['name'] = $section->name;
-            $data['displayedname'] = $section->displayedname;
-            $data['description'] = $section->description;
-            $data['sortorder'] = $section->sortorder;
+            $goal = new Goal($id);
+            $data['id'] = $goal->id;
+            $data['courseid'] = $goal->courseid;
+            $data['name'] = $goal->name;
+            $data['description'] = $goal->description;
         }
 
         $data = (object)$data;

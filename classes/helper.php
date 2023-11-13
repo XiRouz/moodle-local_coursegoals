@@ -7,6 +7,12 @@ class helper
     const FEATURE_CUSTOMVIEW = 'customview';
     const FEATURE_CUSTOMTASKDETAILS = 'customtaskdetails';
 
+
+    // course page header - '#page-header'
+    // course content div -
+    const COURSE_PAGE_HEADER_400 = '#page-header';
+    const COURSE_CONTENT_START_400 = '.course-content';
+
     /** Checks if user is on page, where rendering this block is allowed
      * @return bool
      */
@@ -78,6 +84,21 @@ class helper
             return 1;
         }
         return 0;
+    }
+
+    public static function resolveAppendOrder($selector) {
+        switch($selector) {
+            case helper::COURSE_PAGE_HEADER_400:
+                $order = 'last';
+                break;
+            case helper::COURSE_CONTENT_START_400:
+                $order = 'first';
+                break;
+            default:
+                $order = 'first';
+                break;
+        }
+        return $order;
     }
 
     public static function canViewGoalsInCourse($courseid) {
