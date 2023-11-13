@@ -7,6 +7,4 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$subplugins = array(
-    'comprules' => 'local/coursegoals/comprules',
-);
+$subplugins = (array) json_decode(file_get_contents(__DIR__ . "/subplugins.json"))->plugintypes;

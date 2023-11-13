@@ -21,7 +21,18 @@
 defined('MOODLE_INTERNAL') || die();
 
 $capabilities = array(
-    'local/coursegoals:manage_coursegoals' => array(
+    'local/coursegoals:manage_all_goals' => array(
+        'riskbitmask' => RISK_SPAM,
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_SYSTEM,
+        'archetypes' => array(
+            'teacher' => CAP_PREVENT,
+            'editingteacher' => CAP_PREVENT,
+            'manager' => CAP_PREVENT,
+            'student' => CAP_PROHIBIT,
+        )
+    ),
+    'local/coursegoals:manage_goals_in_course' => array(
         'riskbitmask' => RISK_SPAM,
         'captype' => 'write',
         'contextlevel' => CONTEXT_COURSE,
@@ -30,6 +41,16 @@ $capabilities = array(
             'editingteacher' => CAP_PREVENT,
             'manager' => CAP_ALLOW,
             'student' => CAP_PROHIBIT,
+        )
+    ),
+    'local/coursegoals:complete_goals' => array(
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_COURSE,
+        'archetypes' => array(
+            'teacher' => CAP_PREVENT,
+            'editingteacher' => CAP_PREVENT,
+            'manager' => CAP_PREVENT,
+            'student' => CAP_ALLOW,
         )
     ),
 );

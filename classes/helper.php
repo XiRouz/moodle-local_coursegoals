@@ -4,6 +4,15 @@ namespace local_coursegoals;
 
 class helper
 {
+    const FEATURE_CUSTOMVIEW = 'customview';
+    const FEATURE_CUSTOMTASKDETAILS = 'customtaskdetails';
+
+
+    // course page header - '#page-header'
+    // course content div -
+    const COURSE_PAGE_HEADER_400 = '#page-header';
+    const COURSE_CONTENT_START_400 = '.course-content';
+
     /** Checks if user is on page, where rendering this block is allowed
      * @return bool
      */
@@ -65,7 +74,7 @@ class helper
     }
 
     /** Checks if user is on any of /my/.. pages
-     *@return int
+     * @return int
      */
     public static function isMyPage(): int {
         global $PAGE, $CFG;
@@ -77,33 +86,25 @@ class helper
         return 0;
     }
 
-    public static function courseHasGoals($courseid, $goalStatus = Goal::STATUS_ACTIVE): bool {
-        global $DB;
+    public static function resolveAppendOrder($selector) {
+        switch($selector) {
+            case helper::COURSE_PAGE_HEADER_400:
+                $order = 'last';
+                break;
+            case helper::COURSE_CONTENT_START_400:
+                $order = 'first';
+                break;
+            default:
+                $order = 'first';
+                break;
+        }
+        return $order;
+    }
 
-        $whereconditions = [];
-        $params['courseid'] = $courseid;
-        $whereconditions[] = "courseid = :courseid";
-        if (is_array($goalStatus)) {
-            list($statusval, $statusparams) = $DB->get_in_or_equal($goalStatus, SQL_PARAMS_NAMED);
-            $whereconditions[] = "status $statusval";
-            $params = array_merge($params, $statusparams);
-        } else if (is_numeric($goalStatus)) {
-            $whereconditions[] = "status = :status";
-            $params['status'] = $goalStatus;
-        }
-        $whereclause = !empty($whereconditions) ? "WHERE (" . implode(" AND ", $whereconditions) . ")" : "";
-        $sql = "
-            SELECT cg.*
-            FROM {coursegoals} cg
-            $whereclause
-            ORDER BY cg.id DESC
-        ";
-        $result = $DB->get_records_sql($sql, $params);
-        if (empty($result)) {
-            return false;
-        } else {
-            return true;
-        }
+    public static function canViewGoalsInCourse($courseid) {
+        // TODO: maybe reconsider this restriction
+        $context = \context_course::instance($courseid);
+        return has_capability('local/coursegoals:complete_goals', $context);
     }
 
 }

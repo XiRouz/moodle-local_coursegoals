@@ -1,0 +1,72 @@
+{{!
+    @template local_coursegoals/goals_tab
+}}
+
+<div id="cg_goals_tab" class="goals-main-tab" style="display: none">
+    <div id="goals_maintab_wrapper">
+        <details id="cg_details_maintab" class="cg-details">
+            <summary class="cg-summary-main">
+                <span class="h3 ml-2">{{#str}}displayname, local_coursegoals{{/str}}</span>
+            </summary>
+           <div class="container goals-maintab-content"
+                style="margin: 0; padding-left: 1.5rem; padding-right: 1.5rem;"> {{! style needed cause bootstrap classes are defined later }}
+               {{#goals}}
+                   <div class="row goal-contents">
+                       <div class="col-3">
+                           <span>{{goalname}}</span>
+                           <br/>
+                           <small>{{goaldescription}}</small>
+                       </div>
+                       <div class="col-9">
+                           <div class="row">
+                           {{! TODO: normalize sections and tasks output }}
+                           {{#sections}}
+                               <div data-sectionid="{{sectionrefid}}" class="col-sm-auto">
+                                   <div>
+                                       <span>{{displayedname}}</span>
+                                   </div>
+                                   <div class="cbs-div">
+                                   {{#sectiontasks}}
+                                       <div data-taskid="{{taskrefid}}" class="cg-taskcb">
+                                           {{{taskcompletedoutput}}}
+                                       </div>
+                                   {{/sectiontasks}}
+                                   </div>
+                               </div>
+
+                           {{/sections}}
+                           {{^sections}}
+                               <div class="cbs-div">
+                               {{#tasks}}
+                                   <div data-taskid="{{taskrefid}}" class="col-sm-auto cg-taskcb">
+                                       {{{taskcompletedoutput}}}
+                                   </div>
+                               {{/tasks}}
+                               </div>
+                           {{/sections}}
+                           </div>
+                       </div>
+                   </div>
+                   <hr/>
+                   <div class="cg-task-details">
+                       {{! TODO: normalize sections and tasks output }}
+                       {{#sections}}
+                           {{#sectiontasks}}
+                               <div data-taskref="{{taskrefid}}" style="display: none">
+                                   {{{taskdetailshtml}}}
+                               </div>
+                           {{/sectiontasks}}
+                       {{/sections}}
+                       {{^sections}}
+                           {{#tasks}}
+                               <div data-taskref="{{taskrefid}}" style="display: none">
+                                   {{{taskdetailshtml}}}
+                               </div>
+                           {{/tasks}}
+                       {{/sections}}
+                   </div>
+               {{/goals}}
+           </div>
+        </details>
+    </div>
+</div>

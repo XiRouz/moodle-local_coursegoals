@@ -1,6 +1,5 @@
 <?php
 
-
 require_once('../../config.php');
 
 require_login();
@@ -19,15 +18,14 @@ $PAGE->set_title(get_string('displayname', 'local_coursegoals'));
 $PAGE->set_heading(get_string('displayname', 'local_coursegoals'));
 $PAGE->set_url(new moodle_url($FULLME));
 
-$params = ['context' => $context, 'courseid' => $course ?? null];
-$table = \local_coursegoals\table\coursegoals_table::create($PAGE, $params);
+//$params = ['context' => $context, 'courseid' => $course ?? null];
+$table = \local_coursegoals\table\sections_table::create($PAGE, []);
 
 echo $OUTPUT->header();
 echo $OUTPUT->spacer([], true);
 
-// TODO: create and add navigation nodes?
-$sections_url = new moodle_url('/local/coursegoals/sections.php');
-echo html_writer::link($sections_url, get_string('sections', 'local_coursegoals'), ['class' => 'm-1 btn btn-secondary']);
+$goals_url = new moodle_url('/local/coursegoals/index.php');
+echo html_writer::link($goals_url, get_string('displayname', 'local_coursegoals'), ['class' => 'm-1 btn btn-secondary']);
 echo '<br/><br/>';
 
 $table->render(true);
